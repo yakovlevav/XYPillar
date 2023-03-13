@@ -3,6 +3,8 @@ import pandas as pd
 import os
 from io import StringIO
 import re
+from PIL import Image
+from datetime import datetime
 
 try:
     import pyi_splash
@@ -11,71 +13,112 @@ try:
 except:
     pass
 
-# import plotly.express as px
-# df = px.data.iris()
-# fig = px.scatter(df, x="sepal_width", y="sepal_length", color="species")
-# fig.show()
-
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
-        self.geometry("500x300")
+        self.geometry("800x600")
         self.title("XYPillar v0.1")
-        self.minsize(800, 600)
-        self.maxsize(800, 600)
-
-        # create 2x2 grid system
+        self.minsize(800, 750)
+        self.maxsize(800, 750)
         
         self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure((5, 6), weight=1)
+        self.grid_columnconfigure(1, weight=1)
 
-        self.label = customtkinter.CTkLabel(master=self, text="Input file")
-        self.label.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+        self.sidebar_frame = customtkinter.CTkFrame(self, width=200, corner_radius=0)
+        self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
+        self.sidebar_frame.grid_rowconfigure(3)
+        self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="XYPillar", 
+                                                 font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
 
-        self.textbox = customtkinter.CTkEntry(master=self)
-        self.textbox.grid(row=0, column=2, padx=10, pady=10,  sticky="ew")
+        self.my_image = customtkinter.CTkImage(light_image=Image.open("XYpillar.png"),
+                                  dark_image=Image.open("XYpillar.png"),
+                                  size=(150, 150))
+        
+        self.logo = customtkinter.CTkLabel(self.sidebar_frame, text='', image=self.my_image)
+        self.logo.grid(row=1, column=0, padx=20, pady=(20, 10))
 
-        self.button = customtkinter.CTkButton(master=self, command=self.button_callback, text="Open File")
-        self.button.grid(row=0, column=3, padx=10, pady=10, sticky="ew")
 
-        self.button = customtkinter.CTkButton(master=self, command=self.convert, text="Save")
-        self.button.grid(row=0, column=4, padx=10, pady=10, sticky="ew")
+        self.button = customtkinter.CTkButton(master=self.sidebar_frame, 
+                                              command=self.button_callback, 
+                                              text="Open XYP File")
+        self.button.grid(row=2, column=0, padx=20, pady=10)
 
-        self.input_box = customtkinter.CTkTextbox(master=self, 
-                                                width=400, corner_radius=15, wrap='none',
-                                                text_color='light yellow', state='disable',
+        self.button = customtkinter.CTkButton(master=self.sidebar_frame, 
+                                              command=self.save, 
+                                              text="Save")
+        self.button.grid(row=3, column=0, padx=20, pady=10, sticky="n")
+
+        self.main_frame = customtkinter.CTkFrame(self, fg_color='transparent', corner_radius=0)
+        self.main_frame.grid(row=0, column=1, sticky="nsew")
+        # self.main_frame.grid_rowconfigure(2)
+        # self.main_frame.grid_columnconfigure(1)
+
+        self.label = customtkinter.CTkLabel(master=self.main_frame, text="Input file:", anchor='e',)
+        self.label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        self.textbox = customtkinter.CTkEntry(master=self.main_frame, state='disabled')
+        self.textbox.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+
+        self.input = customtkinter.CTkLabel(master=self.main_frame, text="Input data", anchor='sw', text_color='grey')
+        self.input.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
+
+        self.input_box = customtkinter.CTkTextbox(master=self.main_frame, 
+                                                width=590, corner_radius=15, wrap='none',
+                                                text_color='light yellow', state='disabled',
                                                 border_color = 'light yellow')
-        self.input_box.grid(row=1, column=1, columnspan=6, sticky="nsew", padx=10, pady=10)
+        self.input_box.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
-        self.out_box = customtkinter.CTkTextbox(master=self, width=400, 
+        self.output = customtkinter.CTkLabel(master=self.main_frame, text="Converted data", anchor='sw', text_color='grey')
+        self.output.grid(row=3, column=0, padx=10, pady=0, sticky="nsew")
+        self.out_box = customtkinter.CTkTextbox(master=self.main_frame, width=590, 
                                                 corner_radius=15, wrap='none', 
-                                                text_color='light green', state='disable',
+                                                text_color='light green', state='disabled',
                                                 border_color = 'light green')
-        self.out_box.grid(row=2, column=1, columnspan=6, sticky="nsew", padx=10, pady=10, )
+        self.out_box.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
+
+        self.status = customtkinter.CTkLabel(master=self.main_frame, text="Status log", anchor='sw', text_color='grey')
+        self.status.grid(row=5, column=0, padx=10, pady=0, sticky="nsew")
+        self.statusbox = customtkinter.CTkTextbox(master=self.main_frame, state='disabled', height=100, text_color='grey')
+        self.statusbox.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+
+    def set_status(self, status):
+        self.statusbox.configure(state='normal')
+        self.statusbox.insert('0.0', "{}: {}\n".format(datetime.now(),status))
+        self.statusbox.configure(state='disabled')
 
     def button_callback(self):
         self.input_file_path = customtkinter.filedialog.askopenfilename(typevariable = 'str')
+        self.set_status("File input path: {}".format(self.input_file_path))
         base = os.path.basename(self.input_file_path)
+        self.textbox.configure(state='normal')
         self.textbox.delete('0', customtkinter.END)
         self.textbox.insert("insert", "{}".format(base))
+        self.textbox.configure(state='disabled')
         self.input_file_name = os.path.splitext(base)[0]
-        # print(self.input_file_name)
 
-        with open(self.input_file_path, 'r') as file:
-            self.dataset = file.read()
+        
+        try:
+            with open(self.input_file_path, 'r') as file:
+                self.dataset = file.read()
+            self.set_status("File opened")
+        except:
+            self.set_status("Unable to open file!")
+            return()
+        
 
         self.input_box.configure(state='normal')
         self.input_box.delete('0.0', customtkinter.END)
         self.input_box.insert('0.0', self.dataset)
-        self.input_box.configure(state='disable')
+        self.input_box.configure(state='disabled')
 
         self.convert()
-
+        self.set_status("File converted successfully")
         self.out_box.configure(state='normal')
         self.out_box.delete('0.0', customtkinter.END)
         self.out_box.insert('0.0',self.dataset_converted.to_csv(index=False, sep=';'))
-        self.out_box.configure(state='disable')
+        self.out_box.configure(state='disabled')
 
     def convert(self):
         parts = self.dataset.split('# Layout position')[1]
@@ -134,7 +177,10 @@ class App(customtkinter.CTk):
         # print(x, y)
 
     def save(self):
-        self.dataset_converted.to_csv( os.path.join(os.getcwd(),'Output',self.input_file_name+'_out.txt'), index=False, sep=';')
+        path = os.path.join(os.getcwd(),'Output',self.input_file_name+'_out.txt')
+        self.dataset_converted.to_csv( path, index=False, sep=';')
+        self.set_status("File saved successfully")
+        self.set_status("File path: {}".format(path))
 
 
 if __name__ == "__main__":
