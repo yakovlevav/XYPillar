@@ -19,6 +19,7 @@ class App(customtkinter.CTk):
 
         self.geometry("800x600")
         self.title("XYPillar v0.1")
+        self.iconbitmap("XYpillar.ico")
         self.minsize(800, 750)
         self.maxsize(800, 750)
         
@@ -179,7 +180,7 @@ class App(customtkinter.CTk):
     def save(self):
         self.output_file_path = customtkinter.filedialog.askdirectory()
         if not self.output_file_path:
-            self.set_status("No output path selected!".format(path))
+            self.set_status("No output path selected!")
             return
         try:
             path = os.path.join(os.getcwd(),'Output',self.input_file_name+'_converted.txt')
