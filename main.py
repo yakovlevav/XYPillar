@@ -47,7 +47,7 @@ class App(customtkinter.CTk):
 
         self.button = customtkinter.CTkButton(master=self.sidebar_frame, 
                                               command=self.save, 
-                                              text="Save")
+                                              text="Export")
         self.button.grid(row=3, column=0, padx=20, pady=10, sticky="n")
 
         self.main_frame = customtkinter.CTkFrame(self, fg_color='transparent', corner_radius=0)
@@ -80,7 +80,7 @@ class App(customtkinter.CTk):
 
         self.status = customtkinter.CTkLabel(master=self.main_frame, text="Status log", anchor='sw', text_color='grey')
         self.status.grid(row=5, column=0, padx=10, pady=0, sticky="nsew")
-        self.statusbox = customtkinter.CTkTextbox(master=self.main_frame, state='disabled', height=100, text_color='grey')
+        self.statusbox = customtkinter.CTkTextbox(master=self.main_frame, state='disabled', height=150, text_color='grey')
         self.statusbox.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
     def set_status(self, status):
@@ -89,7 +89,7 @@ class App(customtkinter.CTk):
         self.statusbox.configure(state='disabled')
 
     def button_callback(self):
-        self.input_file_path = customtkinter.filedialog.askopenfilename(typevariable = 'str')
+        self.input_file_path = customtkinter.filedialog.askopenfilename(filetypes=[("Text files","*.txt")])
         self.set_status("File input path: {}".format(self.input_file_path))
         base = os.path.basename(self.input_file_path)
         self.textbox.configure(state='normal')
@@ -177,10 +177,17 @@ class App(customtkinter.CTk):
         # print(x, y)
 
     def save(self):
-        path = os.path.join(os.getcwd(),'Output',self.input_file_name+'_out.txt')
-        self.dataset_converted.to_csv( path, index=False, sep=';')
-        self.set_status("File saved successfully")
-        self.set_status("File path: {}".format(path))
+        self.output_file_path = customtkinter.filedialog.askdirectory()
+        if not self.output_file_path:
+            self.set_status("No output path selected!".format(path))
+            return
+        try:
+            path = os.path.join(os.getcwd(),'Output',self.input_file_name+'_converted.txt')
+            self.dataset_converted.to_csv( path, index=False, sep=';')
+            self.set_status("File saved successfully")
+            self.set_status("File path: {}".format(path))
+        except:
+            self.set_status("Unable to export file!")
 
 
 if __name__ == "__main__":
