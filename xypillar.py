@@ -175,7 +175,7 @@ class App(customtkinter.CTk):
         x2, y2 = float(x2[2:]), float(y2[2:])
         x = abs(x2-x1)
         y = abs(y2-y1)
-        # print(x, y)
+        self.set_status("Your panel steps: X:{} Y:{}".format(x,y))
 
     def save(self):
         self.output_file_path = customtkinter.filedialog.askdirectory()
