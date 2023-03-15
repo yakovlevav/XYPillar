@@ -10,7 +10,8 @@ import version_query
 
 try:
     version_str = version_query.predict_version_str()
-except Exception as e: print(e)
+except Exception as e:
+    version_str = '0.1.0'
 
 try:
     import pyi_splash
@@ -21,11 +22,18 @@ except: pass
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        window_width = 800
+        window_height = 750
 
-        self.geometry("800x600")
+        # get the screen dimension
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        center_x = int(screen_width/2 - window_width / 2)
+        center_y = int(screen_height/2 - window_height / 2)
+
+        self.geometry("{}x{}+{}+{}".format(window_width, window_height, center_x, center_y))
         self.title("XYPillar {}".format(version_str))
         self.iconbitmap("XYpillar.ico")
-        self.eval('tk::PlaceWindow . center')
         self.minsize(800, 750)
         self.maxsize(800, 750)
         
