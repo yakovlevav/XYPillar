@@ -1,4 +1,5 @@
 import customtkinter
+from tkinter import messagebox
 import pandas as pd
 import os
 from io import StringIO
@@ -195,16 +196,16 @@ class App(customtkinter.CTk):
 
     def save(self):
         path = customtkinter.filedialog.askdirectory()
-        self.output_file_path = os.path.normpath(path)
-        print(self.output_file_path)
+        self.output_file_path = os.path.normpath(path)        
         if not self.output_file_path:
             self.set_status("No output path selected!")
             return
         try:
             path = os.path.join(self.output_file_path, self.input_file_name+'_converted.txt')
-            self.dataset_converted.to_csv( path, index=False, sep=';')
-            self.set_status("File saved successfully")
-            self.set_status("File path: {}".format(path))
+            if os.path.exists(path) and messagebox.askokcancel("Confirmation","File already exists, overwrite?"):            
+                self.dataset_converted.to_csv( path, index=False, sep=';', mode='w')
+                self.set_status("File saved successfully")
+                self.set_status("File path: {}".format(path))
         except:
             self.set_status("Unable to export file!")
 
