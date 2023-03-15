@@ -194,12 +194,14 @@ class App(customtkinter.CTk):
         self.set_status("Your panel steps: X:{} Y:{}".format(x,y))
 
     def save(self):
-        self.output_file_path = customtkinter.filedialog.askdirectory()
+        path = customtkinter.filedialog.askdirectory()
+        self.output_file_path = os.path.normpath(path)
+        print(self.output_file_path)
         if not self.output_file_path:
             self.set_status("No output path selected!")
             return
         try:
-            path = os.path.join(os.getcwd(),'Output',self.input_file_name+'_converted.txt')
+            path = os.path.join(self.output_file_path, self.input_file_name+'_converted.txt')
             self.dataset_converted.to_csv( path, index=False, sep=';')
             self.set_status("File saved successfully")
             self.set_status("File path: {}".format(path))
