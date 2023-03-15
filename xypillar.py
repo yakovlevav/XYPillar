@@ -6,6 +6,14 @@ import re
 from PIL import Image
 from datetime import datetime
 
+import version_query
+
+try:
+    version_str = version_query.query_version_str()
+    print(version_str)
+except:
+    pass
+
 try:
     import pyi_splash
     pyi_splash.update_text('XYPillar loadind...')
@@ -20,6 +28,7 @@ class App(customtkinter.CTk):
         self.geometry("800x600")
         self.title("XYPillar v0.1")
         self.iconbitmap("XYpillar.ico")
+        self.eval('tk::PlaceWindow . center')
         self.minsize(800, 750)
         self.maxsize(800, 750)
         
