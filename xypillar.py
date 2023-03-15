@@ -9,8 +9,7 @@ from datetime import datetime
 import version_query
 
 try:
-    version_str = version_query.query_version_str()
-    print(version_str)
+    version_str = version_query.predict_version_str()
 except Exception as e: print(e)
 
 try:
@@ -24,7 +23,7 @@ class App(customtkinter.CTk):
         super().__init__()
 
         self.geometry("800x600")
-        self.title("XYPillar v0.1")
+        self.title("XYPillar {}".format(version_str))
         self.iconbitmap("XYpillar.ico")
         self.eval('tk::PlaceWindow . center')
         self.minsize(800, 750)
