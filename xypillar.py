@@ -31,11 +31,13 @@ class App(customtkinter.CTk):
         center_x = int(screen_width/2 - window_width / 2)
         center_y = int(screen_height/2 - window_height / 2)
 
+        # Make window with size and in the center of the sreen
         self.geometry("{}x{}+{}+{}".format(window_width, window_height, center_x, center_y))
         self.title("XYPillar {}".format(version_str))
         self.iconbitmap("XYpillar.ico")
         self.minsize(800, 750)
         self.maxsize(800, 750)
+        self.attributes('-topmost',True) #Bring window on top
         
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
