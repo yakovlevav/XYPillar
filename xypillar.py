@@ -11,15 +11,13 @@ import version_query
 try:
     version_str = version_query.query_version_str()
     print(version_str)
-except:
-    pass
+except Exception as e: print(e)
 
 try:
     import pyi_splash
     pyi_splash.update_text('XYPillar loadind...')
     pyi_splash.close()
-except:
-    pass
+except: pass
 
 class App(customtkinter.CTk):
     def __init__(self):
