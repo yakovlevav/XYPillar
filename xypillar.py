@@ -35,7 +35,7 @@ class App(customtkinter.CTk):
         # Make window with size and in the center of the sreen
         self.geometry("{}x{}+{}+{}".format(window_width, window_height, center_x, center_y))
         self.title("XYPillar {}".format(version_str))
-        self.iconbitmap("XYpillar.ico")
+        self.iconbitmap(os.path.join(os.path.dirname(__file__), "XYpillar.ico") )
         self.minsize(800, 750)
         self.maxsize(800, 750)
         self.attributes('-topmost',True) #Bring window on top
@@ -51,7 +51,7 @@ class App(customtkinter.CTk):
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
 
         self.my_image = customtkinter.CTkImage(light_image=Image.open("XYpillar.png"),
-                                  dark_image=Image.open("XYpillar.png"),
+                                  dark_image=Image.open( os.path.join(os.path.dirname(__file__), "XYpillar.png" )),
                                   size=(150, 150))
         
         self.logo = customtkinter.CTkLabel(self.sidebar_frame, text='', image=self.my_image)
@@ -76,7 +76,7 @@ class App(customtkinter.CTk):
         self.label = customtkinter.CTkLabel(master=self.main_frame, text="Input file:", anchor='e',)
         self.label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
-        self.textbox = customtkinter.CTkEntry(master=self.main_frame, state='disabled')
+        self.textbox = customtkinter.CTkEntry(smaster=self.main_frame, state='disabled')
         self.textbox.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
         self.input = customtkinter.CTkLabel(master=self.main_frame, text="Input data", anchor='sw', text_color='grey')
