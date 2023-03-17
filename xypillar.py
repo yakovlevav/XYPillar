@@ -76,7 +76,7 @@ class App(customtkinter.CTk):
         self.label = customtkinter.CTkLabel(master=self.main_frame, text="Input file:", anchor='e',)
         self.label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
-        self.textbox = customtkinter.CTkEntry(smaster=self.main_frame, state='disabled')
+        self.textbox = customtkinter.CTkEntry(master=self.main_frame, state='disabled')
         self.textbox.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
         self.input = customtkinter.CTkLabel(master=self.main_frame, text="Input data", anchor='sw', text_color='grey')
@@ -196,18 +196,24 @@ class App(customtkinter.CTk):
 
     def save(self):
         path = customtkinter.filedialog.askdirectory()
-        self.output_file_path = os.path.normpath(path)        
+        self.output_file_path = os.path.normpath(path)
+
         if not self.output_file_path:
             self.set_status("No output path selected!")
             return
+
         try:
-            path = os.path.join(self.output_file_path, self.input_file_name+'_converted.txt')
-            if os.path.exists(path) and messagebox.askokcancel("Confirmation","File already exists, overwrite?"):            
-                self.dataset_converted.to_csv( path, index=False, sep=';', mode='w')
-                self.set_status("File saved successfully")
-                self.set_status("File path: {}".format(path))
-        except:
-            self.set_status("Unable to export file!")
+            file_path = os.path.join(self.output_file_path, self.input_file_name+'_converted.txt')
+
+            if os.path.exists(file_path) and not messagebox.askokcancel("Confirmation", "File already exists, overwrite?"):
+                return
+
+            self.dataset_converted.to_csv(file_path, index=False, sep=';', mode='w')
+            self.set_status("File path: {}".format(file_path))
+            self.set_status("File saved successfully")
+
+        except Exception as e:
+            self.set_status("Unable to export file: {}".format(str(e)))
 
 
 if __name__ == "__main__":
