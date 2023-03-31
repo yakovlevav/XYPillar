@@ -79,26 +79,24 @@ class App(customtkinter.CTk):
         self.textbox = customtkinter.CTkEntry(master=self.main_frame, state='disabled')
         self.textbox.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
-        self.input = customtkinter.CTkLabel(master=self.main_frame, text="Input data", anchor='sw', text_color='grey')
+        self.input = customtkinter.CTkLabel(master=self.main_frame, text="Input data", anchor='sw')
         self.input.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
 
         self.input_box = customtkinter.CTkTextbox(master=self.main_frame, 
                                                 width=590, corner_radius=15, wrap='none',
-                                                text_color='light yellow', state='disabled',
-                                                border_color = 'light yellow')
+                                                state='disabled',)
         self.input_box.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
-        self.output = customtkinter.CTkLabel(master=self.main_frame, text="Converted data", anchor='sw', text_color='grey')
+        self.output = customtkinter.CTkLabel(master=self.main_frame, text="Converted data", anchor='sw')
         self.output.grid(row=3, column=0, padx=10, pady=0, sticky="nsew")
         self.out_box = customtkinter.CTkTextbox(master=self.main_frame, width=590, 
                                                 corner_radius=15, wrap='none', 
-                                                text_color='light green', state='disabled',
-                                                border_color = 'light green')
+                                                state='disabled',)
         self.out_box.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
-        self.status = customtkinter.CTkLabel(master=self.main_frame, text="Status log", anchor='sw', text_color='grey')
+        self.status = customtkinter.CTkLabel(master=self.main_frame, text="Status log", anchor='sw')
         self.status.grid(row=5, column=0, padx=10, pady=0, sticky="nsew")
-        self.statusbox = customtkinter.CTkTextbox(master=self.main_frame, state='disabled', height=150, text_color='grey')
+        self.statusbox = customtkinter.CTkTextbox(master=self.main_frame, state='disabled', height=150)
         self.statusbox.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
     def set_status(self, status):
@@ -208,7 +206,7 @@ class App(customtkinter.CTk):
             if os.path.exists(file_path) and not messagebox.askokcancel("Confirmation", "File already exists, overwrite?"):
                 return
 
-            self.dataset_converted.to_csv(file_path, index=False, sep=';', mode='w')
+            self.dataset_converted.to_csv(file_path, index=False, sep='\t', mode='w')
             self.set_status("File path: {}".format(file_path))
             self.set_status("File saved successfully")
 
