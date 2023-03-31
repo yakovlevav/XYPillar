@@ -7,12 +7,12 @@ import re
 from PIL import Image
 from datetime import datetime
 
-import version_query
+# import version_query
 
-try:
-    version_str = version_query.predict_version_str()
-except Exception as e:
-    version_str = '0.1.0'
+# try:
+#     # version_str = version_query.predict_version_str()
+# except Exception as e:
+version_str = '0.1.0'
 
 try:
     import pyi_splash
@@ -133,7 +133,7 @@ class App(customtkinter.CTk):
         self.set_status("File converted successfully")
         self.out_box.configure(state='normal')
         self.out_box.delete('0.0', customtkinter.END)
-        self.out_box.insert('0.0',self.dataset_converted.to_csv(index=False, sep=';'))
+        self.out_box.insert('0.0',self.dataset_converted.to_csv(index=False, sep='\t'))
         self.out_box.configure(state='disabled')
 
     def convert(self):
