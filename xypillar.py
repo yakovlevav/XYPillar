@@ -78,8 +78,8 @@ class App(customtkinter.CTk):
         self.label = customtkinter.CTkLabel(master=self.main_frame, text="Input file:", anchor='e',)
         self.label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
-        self.textbox = customtkinter.CTkEntry(master=self.main_frame, state='disabled')
-        self.textbox.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.file_name_box = customtkinter.CTkEntry(master=self.main_frame, state='disabled')
+        self.file_name_box.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
         self.input = customtkinter.CTkLabel(master=self.main_frame, text="Input data", anchor='sw')
         self.input.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
@@ -105,17 +105,50 @@ class App(customtkinter.CTk):
         self.statusbox.configure(state='normal')
         self.statusbox.insert('0.0', "{}: {}\n".format(datetime.now(),status))
         self.statusbox.configure(state='disabled')
+    
+    def clear_file_name_box(self):
+        self.file_name_box.configure(state='normal')
+        self.file_name_box.delete("0", customtkinter.END)
+        self.file_name_box.configure(state='disabled')
+    
+    def clear_input_box(self):
+        self.input_box.configure(state='normal')
+        self.input_box.delete("0.0", customtkinter.END)
+        self.input_box.configure(state='disabled')
+    
+    def clear_out_box(self):
+        self.out_box.configure(state='normal')
+        self.out_box.delete("0.0", customtkinter.END)
+        self.out_box.configure(state='disabled')
+        
+    def file_name_box_insert(self, text):
+        self.file_name_box.configure(state='normal')
+        self.file_name_box.insert("insert", "{}".format(text))
+        self.file_name_box.configure(state='disabled')
+        
+    def insert_input_box(self, data):
+        self.input_box.configure(state='normal')
+        self.input_box.delete('0.0', customtkinter.END)
+        self.input_box.insert('0.0', data)
+        self.input_box.configure(state='disabled')
 
+    def insert_out_box(self, data):
+        self.out_box.configure(state='normal')
+        self.out_box.delete('0.0', customtkinter.END)
+        self.out_box.insert('0.0', data)
+        self.out_box.configure(state='disabled')
+        
     def button_callback(self):
+        self.clear_file_name_box()
+        self.clear_input_box()
+        self.clear_out_box()
+        
         self.input_file_path = customtkinter.filedialog.askopenfilename(filetypes=[("Text files","*.txt")])
         self.set_status("File input path: {}".format(self.input_file_path))
         base = os.path.basename(self.input_file_path)
-        self.textbox.configure(state='normal')
-        self.textbox.delete('0', customtkinter.END)
-        self.textbox.insert("insert", "{}".format(base))
-        self.textbox.configure(state='disabled')
+        self.file_name_box_insert(base)
+        
         self.input_file_name = os.path.splitext(base)[0]
-
         
         try:
             with open(self.input_file_path, 'r') as file:
@@ -125,18 +158,11 @@ class App(customtkinter.CTk):
             self.set_status("Unable to open file!")
             return()
         
-
-        self.input_box.configure(state='normal')
-        self.input_box.delete('0.0', customtkinter.END)
-        self.input_box.insert('0.0', self.dataset)
-        self.input_box.configure(state='disabled')
-
+        self.insert_input_box(self.dataset)
         self.convert()
         self.set_status("File converted successfully")
-        self.out_box.configure(state='normal')
-        self.out_box.delete('0.0', customtkinter.END)
-        self.out_box.insert('0.0',self.dataset_converted.to_csv(index=False, sep=self.output_sep))
-        self.out_box.configure(state='disabled')
+        
+        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
 
     def convert(self):
         parts = self.dataset.split('# Layout position')[1]
@@ -202,9 +228,6 @@ class App(customtkinter.CTk):
             self.set_status("No output path selected!")
             return
         try:
-            if os.path.exists(self.output_file_path) and not messagebox.askokcancel("Confirmation", "File already exists, overwrite?"):
-                return
-
             self.dataset_converted.to_csv(self.output_file_path, index=False, sep=self.output_sep, mode='w')
             self.set_status("File path: {}".format(self.output_file_path))
             self.set_status("File saved successfully")
