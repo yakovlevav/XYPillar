@@ -24,7 +24,7 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         window_width = 800
-        window_height = 750
+        window_height = 800
         
         self.output_sep = '\t'
 
@@ -39,25 +39,46 @@ class App(customtkinter.CTk):
         self.title("XYPillar {}".format(version_str))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "XYpillar.ico") )
         self.minsize(800, 750)
-        self.maxsize(800, 750)
-        self.attributes('-topmost',True) #Bring window on top
+        # self.maxsize(800, 750)
+        # self.attributes('-topmost',True) #Bring window on top
+        self.create_main_grid()
+        self.sidebar()
+        self.main_bar()
         
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=1)
+    def create_main_grid(self):
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=20)
+        self.rowconfigure(0, weight= 1)
 
-        self.sidebar_frame = customtkinter.CTkFrame(self, width=200, corner_radius=0)
-        self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(3)
-        self.logo_label = customtkinter.CTkLabel(self.sidebar_frame, text="XYPillar", 
-                                                 font=customtkinter.CTkFont(size=20, weight="bold"))
-        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-
-        self.my_image = customtkinter.CTkImage(light_image=Image.open("XYpillar.png"),
-                                  dark_image=Image.open( os.path.join(os.path.dirname(__file__), "XYpillar.png" )),
-                                  size=(150, 150))
+    def sidebar(self):
+        self.sidebar_frame = customtkinter.CTkFrame(self, corner_radius=0)
+        self.sidebar_frame.grid(row=0, column=0, sticky="news")
+        self.sidebar_frame.columnconfigure(0, weight = 1)
+        self.logo_label = customtkinter.CTkLabel(
+            self.sidebar_frame, text="XYPillar", 
+            font=customtkinter.CTkFont(size=20, weight="bold")
+            )
+        self.logo_label.grid(
+            row=0, 
+            column=0, 
+            padx=20, 
+            pady=(20, 10),
+            )
         
-        self.logo = customtkinter.CTkLabel(self.sidebar_frame, text='', image=self.my_image)
-        self.logo.grid(row=1, column=0, padx=20, pady=(20, 10))
+        self.my_image = customtkinter.CTkImage(
+            light_image=Image.open("XYpillar.png"),
+            dark_image=Image.open( os.path.join(os.path.dirname(__file__), "XYpillar.png" )),
+            size=(150, 150)
+            )
+        self.logo = customtkinter.CTkLabel(
+            self.sidebar_frame,
+            text='', 
+            image=self.my_image)
+        self.logo.grid(
+            row=1, 
+            column=0, 
+            padx=20, 
+            pady=(20, 10))
 
 
         self.button = customtkinter.CTkButton(master=self.sidebar_frame, 
@@ -69,37 +90,121 @@ class App(customtkinter.CTk):
                                               command=self.save, 
                                               text="Export")
         self.button.grid(row=3, column=0, padx=20, pady=10, sticky="n")
-
+    
+    def main_bar(self):
         self.main_frame = customtkinter.CTkFrame(self, fg_color='transparent', corner_radius=0)
-        self.main_frame.grid(row=0, column=1, sticky="nsew")
-        # self.main_frame.grid_rowconfigure(2)
-        # self.main_frame.grid_columnconfigure(1)
+        self.main_frame.grid(row=0, column=1, sticky="news")
+        self.main_frame.columnconfigure(0, weight=1)
+        self.main_frame.columnconfigure(1, weight=1)
+        self.main_frame.rowconfigure(0, weight= 1)
+        self.main_frame.rowconfigure(1, weight= 1)
+        self.main_frame.rowconfigure(2, weight= 50)
+        self.main_frame.rowconfigure(3, weight= 1)
+        self.main_frame.rowconfigure(4, weight= 50)
+        self.main_frame.rowconfigure(5, weight= 1)
+        self.main_frame.rowconfigure(6, weight= 1)
+        
+        self.label = customtkinter.CTkLabel(
+            master=self.main_frame, 
+            text="Input file:", 
+            anchor='e'
+            )
+        self.label.grid(
+            row=0, 
+            column=0, 
+            padx=10, 
+            pady=10,
+            sticky="ew"
+            )
 
-        self.label = customtkinter.CTkLabel(master=self.main_frame, text="Input file:", anchor='e',)
-        self.label.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.file_name_box = customtkinter.CTkEntry(
+            master=self.main_frame, 
+            state='disabled'
+            )
+        self.file_name_box.grid(
+            row=0,
+            column=1, 
+            padx=10, 
+            pady=10,
+            sticky="w"
+            )
 
-        self.file_name_box = customtkinter.CTkEntry(master=self.main_frame, state='disabled')
-        self.file_name_box.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.input = customtkinter.CTkLabel(
+            master=self.main_frame, 
+            text="Input data", 
+            anchor='w'
+            )
+        self.input.grid(
+            row=1, 
+            column=0, 
+            padx=20, 
+            pady=0,
+            sticky="news"
+            )
 
-        self.input = customtkinter.CTkLabel(master=self.main_frame, text="Input data", anchor='sw')
-        self.input.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
+        self.input_box = customtkinter.CTkTextbox(
+            master=self.main_frame, 
+            corner_radius=15,
+            wrap='none',
+            state='disabled',
+            )
+        self.input_box.grid(
+            row=2, 
+            column=0, 
+            columnspan=2, 
+            padx=10, 
+            pady=10,
+            sticky="news"
+            )
 
-        self.input_box = customtkinter.CTkTextbox(master=self.main_frame, 
-                                                width=590, corner_radius=15, wrap='none',
-                                                state='disabled',)
-        self.input_box.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
+        self.output = customtkinter.CTkLabel(
+            master=self.main_frame, 
+            text="Converted data", 
+            anchor='w')
+        self.output.grid(
+            row=3, 
+            column=0, 
+            padx=20, 
+            pady=0,
+            sticky="news"
+            )
+        
+        self.out_box = customtkinter.CTkTextbox(
+            master=self.main_frame, 
+            corner_radius=15, wrap='none', 
+            state='disabled',)
+        self.out_box.grid(
+            row=4, 
+            column=0, 
+            columnspan=2, 
+            padx=10, 
+            pady=10,
+            sticky="news"
+            )
 
-        self.output = customtkinter.CTkLabel(master=self.main_frame, text="Converted data", anchor='sw')
-        self.output.grid(row=3, column=0, padx=10, pady=0, sticky="nsew")
-        self.out_box = customtkinter.CTkTextbox(master=self.main_frame, width=590, 
-                                                corner_radius=15, wrap='none', 
-                                                state='disabled',)
-        self.out_box.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
-
-        self.status = customtkinter.CTkLabel(master=self.main_frame, text="Status log", anchor='sw')
-        self.status.grid(row=5, column=0, padx=10, pady=0, sticky="nsew")
-        self.statusbox = customtkinter.CTkTextbox(master=self.main_frame, state='disabled', height=150)
-        self.statusbox.grid(row=6, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
+        self.status = customtkinter.CTkLabel(
+            master=self.main_frame, 
+            text="Status log", 
+            anchor='w')
+        self.status.grid(
+            row=5, 
+            column=0, 
+            padx=20, 
+            pady=0,
+            sticky="news"
+            )
+        self.statusbox = customtkinter.CTkTextbox(
+            master=self.main_frame, 
+            state='disabled', 
+            )
+        self.statusbox.grid(
+            row=6, 
+            column=0, 
+            columnspan=2, 
+            padx=10, 
+            pady=10,
+            sticky="news"
+            )
 
     def set_status(self, status):
         self.statusbox.configure(state='normal')
