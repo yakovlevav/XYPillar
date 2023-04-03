@@ -25,6 +25,8 @@ class App(customtkinter.CTk):
         super().__init__()
         window_width = 800
         window_height = 750
+        
+        self.output_sep = '\t'
 
         # get the screen dimension
         screen_width = self.winfo_screenwidth()
@@ -133,7 +135,7 @@ class App(customtkinter.CTk):
         self.set_status("File converted successfully")
         self.out_box.configure(state='normal')
         self.out_box.delete('0.0', customtkinter.END)
-        self.out_box.insert('0.0',self.dataset_converted.to_csv(index=False, sep='\t'))
+        self.out_box.insert('0.0',self.dataset_converted.to_csv(index=False, sep=self.output_sep))
         self.out_box.configure(state='disabled')
 
     def convert(self):
@@ -193,21 +195,18 @@ class App(customtkinter.CTk):
         self.set_status("Your panel steps: X:{} Y:{}".format(x,y))
 
     def save(self):
-        path = customtkinter.filedialog.askdirectory()
-        self.output_file_path = os.path.normpath(path)
+        path_name = customtkinter.filedialog.asksaveasfilename(filetypes=[("Text files","*.txt")], initialfile = self.input_file_name+'_converted.txt')
+        self.output_file_path = os.path.normpath(path_name)
 
         if not self.output_file_path:
             self.set_status("No output path selected!")
             return
-
         try:
-            file_path = os.path.join(self.output_file_path, self.input_file_name+'_converted.txt')
-
-            if os.path.exists(file_path) and not messagebox.askokcancel("Confirmation", "File already exists, overwrite?"):
+            if os.path.exists(self.output_file_path) and not messagebox.askokcancel("Confirmation", "File already exists, overwrite?"):
                 return
 
-            self.dataset_converted.to_csv(file_path, index=False, sep='\t', mode='w')
-            self.set_status("File path: {}".format(file_path))
+            self.dataset_converted.to_csv(self.output_file_path, index=False, sep=self.output_sep, mode='w')
+            self.set_status("File path: {}".format(self.output_file_path))
             self.set_status("File saved successfully")
 
         except Exception as e:
