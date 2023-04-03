@@ -12,7 +12,7 @@ from datetime import datetime
 # try:
 #     # version_str = version_query.predict_version_str()
 # except Exception as e:
-version_str = '0.1.0'
+version_str = '0.1.1'
 
 try:
     import pyi_splash
@@ -82,7 +82,7 @@ class App(customtkinter.CTk):
 
 
         self.button = customtkinter.CTkButton(master=self.sidebar_frame, 
-                                              command=self.button_callback, 
+                                              command=self.open_callback, 
                                               text="Open XYP File")
         self.button.grid(row=2, column=0, padx=20, pady=10)
 
@@ -244,12 +244,18 @@ class App(customtkinter.CTk):
         self.out_box.insert('0.0', data)
         self.out_box.configure(state='disabled')
         
-    def button_callback(self):
+    def clean_all(self):
         self.clear_file_name_box()
         self.clear_input_box()
         self.clear_out_box()
+        self.dataset = None
+        self.input_file_name = None
+        
+    def open_callback(self):
+        self.clean_all()
         
         self.input_file_path = customtkinter.filedialog.askopenfilename(filetypes=[("Text files","*.txt")])
+        if not self.input_file_path: return
         self.set_status("File input path: {}".format(self.input_file_path))
         base = os.path.basename(self.input_file_path)
         self.file_name_box_insert(base)
@@ -327,6 +333,7 @@ class App(customtkinter.CTk):
         self.set_status("Your panel steps: X:{} Y:{}".format(x,y))
 
     def save(self):
+        if not self.input_file_name:return
         path_name = customtkinter.filedialog.asksaveasfilename(filetypes=[("Text files","*.txt")], initialfile = self.input_file_name+'_converted.txt')
         self.output_file_path = os.path.normpath(path_name)
 
