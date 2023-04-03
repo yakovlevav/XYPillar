@@ -7,6 +7,12 @@ import re
 from PIL import Image
 from datetime import datetime
 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg 
+import matplotlib.pyplot as plt
+import matplotlib
+
+matplotlib.use("Agg") # Destroy app after closing
+
 # import version_query
 
 # try:
@@ -38,12 +44,14 @@ class App(customtkinter.CTk):
         self.geometry("{}x{}+{}+{}".format(window_width, window_height, center_x, center_y))
         self.title("XYPillar {}".format(version_str))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "XYpillar.ico") )
-        self.minsize(800, 750)
+        self.minsize(1200, 750)
         # self.maxsize(800, 750)
         # self.attributes('-topmost',True) #Bring window on top
         self.create_main_grid()
         self.sidebar()
         self.main_bar()
+        self.draw_canvas()
+        self.plot_xyp()
         
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
@@ -348,7 +356,29 @@ class App(customtkinter.CTk):
         except Exception as e:
             self.set_status("Unable to export file: {}".format(str(e)))
 
-
+    def draw_canvas(self):
+        fig, self.ax = plt.subplots()
+        fig.set_size_inches(5,5)
+        x,y = [1,2,3], [1,2,3]
+        self.ax.scatter(x,y)
+        self.ax.axis("off")
+        fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
+        self.canvas = FigureCanvasTkAgg(fig,master=self)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().grid(
+            row=0, 
+            column=3, 
+            padx=20, 
+            pady=(20, 10),
+        )
+        
+    def plot_xyp(self):
+        x,y = [1,2,3], [2,3,4]
+        self.ax.scatter(x,y)
+        self.canvas.get_tk_widget()
+        self.update()
+        
+         
 if __name__ == "__main__":
     app = App()
     app.mainloop()
