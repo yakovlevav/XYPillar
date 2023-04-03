@@ -95,7 +95,7 @@ class App(customtkinter.CTk):
         self.main_frame = customtkinter.CTkFrame(self, fg_color='transparent', corner_radius=0)
         self.main_frame.grid(row=0, column=1, sticky="news")
         self.main_frame.columnconfigure(0, weight=1)
-        self.main_frame.columnconfigure(1, weight=1)
+        self.main_frame.columnconfigure(1, weight=10)
         self.main_frame.rowconfigure(0, weight= 1)
         self.main_frame.rowconfigure(1, weight= 1)
         self.main_frame.rowconfigure(2, weight= 50)
@@ -119,7 +119,8 @@ class App(customtkinter.CTk):
 
         self.file_name_box = customtkinter.CTkEntry(
             master=self.main_frame, 
-            state='disabled'
+            state='disabled',
+            width=200
             )
         self.file_name_box.grid(
             row=0,
