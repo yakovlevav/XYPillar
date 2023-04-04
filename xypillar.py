@@ -8,25 +8,27 @@ from PIL import Image
 from datetime import datetime
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+from matplotlib.widgets import RadioButtons
 
 from pandastable import Table, TableModel, config
 
 plt.switch_backend("Agg") # Destroy app after closing
-
 # import version_query
 
 # try:
 #     # version_str = version_query.predict_version_str()
 # except Exception as e:
 version_str = '0.2.1'
-
 try:
     import pyi_splash
     pyi_splash.update_text('XYPillar loadind...')
     pyi_splash.close()
 except: pass
+
+
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -59,8 +61,8 @@ class App(customtkinter.CTk):
         
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=5)
-        self.columnconfigure(2, weight=20)
+        self.columnconfigure(1, weight=30)
+        self.columnconfigure(2, weight=5)
         self.columnconfigure(3, weight=1)
         self.rowconfigure(0, weight= 1)
 
@@ -155,7 +157,7 @@ class App(customtkinter.CTk):
         
     def main_bar(self):
         self.main_frame = customtkinter.CTkFrame(self, fg_color='transparent', corner_radius=0)
-        self.main_frame.grid(row=0, column=1, sticky="news")
+        self.main_frame.grid(row=0, column=2, sticky="news")
         self.main_frame.columnconfigure(0, weight=1)
         self.main_frame.columnconfigure(1, weight=10)
         self.main_frame.rowconfigure(0, weight= 1)
@@ -273,15 +275,7 @@ class App(customtkinter.CTk):
         self.datatable_frame = customtkinter.CTkFrame(self)
         self.datatable_frame.grid(
             row=0, 
-            column=2, 
-            sticky="news",
-            padx=20, 
-            pady=20
-            )
-        self.datatable_frame = customtkinter.CTkFrame(self)
-        self.datatable_frame.grid(
-            row=0, 
-            column=2, 
+            column=1, 
             sticky="news",
             padx=20, 
             pady=20
@@ -354,10 +348,11 @@ class App(customtkinter.CTk):
         self.input_file_name = None
         #Clearing plot
         self.clear_plot()
+        self.set_status("All cleared!")
         
     def open_callback(self):
         self.clean_all()
-        
+
         self.input_file_path = customtkinter.filedialog.askopenfilename(filetypes=[("Text files","*.txt")])
         if not self.input_file_path: return
         self.set_status("File input path: {}".format(self.input_file_path))
@@ -376,66 +371,47 @@ class App(customtkinter.CTk):
         
         self.insert_input_box(self.dataset)
         self.convert()
-        self.set_status("File converted successfully")
         self.update_table()
         self.plot_xyp()
+        self.set_status("Data ready for review")
         self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
     
     def convert(self):
-        parts = self.dataset.split('# Layout position')[1]
-        #Read first board position
-        #Get header
-        header = pd.read_csv(StringIO(parts), 
-                            sep='|', 
-                            skiprows=1, 
-                            nrows=0, 
-                            ).columns.str.strip()
-        #Get body
-        df = pd.read_csv(StringIO(parts), 
-                        sep='|',
-                        comment = "#",
-                        skiprows=1,
-                        names = header,
-                        usecols= ['#refdes', 'device type', 'cRot(P)', 'cX(P)', 'cY(P)', 'side(P)']
-                        )
-        df[ ["Part Number", 'device type'] ] = df['device type'].str.split(',', n = 1, expand=True)
-        df[ ["Package", 'Part Number'] ] = df['Part Number'].str.split('-', n = 1, expand=True)
-        #Drops and renames
-        df = df.drop(columns = 'device type')
-        df = df.rename(columns={'#refdes': "Ref. Designator", 'side(P)':"Side", 'cRot(P)':'Rotation', 'cX(P)':'X', 'cY(P)':'Y'})
-
-        #Read glob fiducials
-        gfids_data = self.dataset.split('# End of list.')[1]  
-        gfids = pd.read_csv(StringIO(gfids_data), 
+        boards = self.dataset.split('\n\n')#[1:-2]
+        # print(parts[-2])
+        def board_converter(board_data):
+            df = pd.read_csv(StringIO(board_data), 
+                            sep='|',
+                            comment = "#",
+                            # skiprows=1,
+                            names = ['Ref. Designator', 'Part Number', 'Package', 'Rotation', 'X', 'Y', 'Side', 'position'],
+                            usecols= [0, 2, 5, 6, 7, 8, 9, 12],
+                            converters={'Part Number': lambda x: x.split(',')[0].split('-')[1]},
+                            dtype = {'position':str}
+                            )
+            return(df)
+        #Get All boads in dictionary with number name
+        d = dict()
+        for i, k in enumerate(boards[1:-2]):
+            df = board_converter(k)
+            df.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+            d.update({df.position.iloc[0] : df.drop('position', axis=1)})
+            
+        # #Read glob fiducials
+        gfids = pd.read_csv(StringIO(boards[-2]),
                             sep='|', 
                             comment = "#",
-                            names=["Side", "Ref. Designator", "X", "Y", 'blank'],
+                            names=["Side", "Ref. Designator", "X", "Y"],
                             usecols=range(4),
                             )
-
-        #Modes for glob fids
         gfids['Part Number'] = 'GlobFig'
         gfids['Package'] = 'GFID'
         gfids['Rotation'] = 0
-        df = pd.concat([df,gfids],ignore_index=True)
-        df = df.sort_values('Ref. Designator')
-
-        #Final adjustments before export, sorting, striping
-        df = df.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-        df = df[['Ref. Designator', 'Part Number', 'Package', 'Rotation', 'X', 'Y', 'Side']]
+        gfids.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        d.update({'glob_fids':gfids})
+        # Concat all dataframe to multi index
+        df = pd.concat(d.values(), axis=1, keys=d.keys())
         self.dataset_converted = df
-
-        # Find coordinate of the shift
-        coordinates_1_1 = re.search(r'# Layout position 1,1 at (.*)', self.dataset).group(1)
-        x1, y1 = coordinates_1_1.split()
-        x1, y1 = float(x1[2:]), float(y1[2:])
-
-        coordinates_2_1 = re.search(r'# Layout position 2,1 at (.*)', self.dataset).group(1)
-        x2, y2 = coordinates_2_1.split()
-        x2, y2 = float(x2[2:]), float(y2[2:])
-        x = abs(x2-x1)
-        y = abs(y2-y1)
-        self.set_status("Your panel steps: X:{} Y:{}".format(x,y))
 
     def save(self):
         if not self.input_file_name:return
@@ -520,10 +496,12 @@ class App(customtkinter.CTk):
             pady=10,
         )
         
+        import mplcursors
         
         self.fig, self.ax = plt.subplots(
             # figsize = (10/2.54,5.8/2.54)
             )
+        mplcursors.cursor(hover=True)
         self.canvas = FigureCanvasTkAgg(self.fig,master= self.plot_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(
@@ -534,8 +512,8 @@ class App(customtkinter.CTk):
             sticky='news'
         )
         #Matplotlib Toolbar
-        toolbarFrame = customtkinter.CTkFrame(self.plot_frame)
-        toolbarFrame.grid(row=2,column=0)
+        toolbarFrame = customtkinter.CTkFrame(self.plot_frame, bg_color='red')
+        toolbarFrame.grid(row=3,column=0)
         self.toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)
         
     def plot_xyp(self, selection=None):
@@ -551,51 +529,52 @@ class App(customtkinter.CTk):
         self.ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
         self.ax.set_aspect('equal') #Keeps ratio of the axis
         
-        choice = self.side_select.get()
-        partnumber_selection = self.package_switch.get()
-        designator_selection = self.designator_switch.get()
-        df = self.dataset_converted
-        if choice != "BOTH": 
-            df = df.query('Side == @choice')
-        grouped = df.groupby('Part Number')
-        # grouped.plot("X",'Y', ax=self.ax, kind='scatter')
-        for partnumber, data in grouped:
-            self.ax.plot(
-                data.X, 
-                data.Y, 
-                label = partnumber, 
-                marker='s', 
-                markersize=3, 
-                alpha=0.5, 
-                linestyle='',
-                )
-            if partnumber_selection:
-                for i, x in enumerate(data.X):
-                    self.ax.annotate(
-                        partnumber, 
-                        (x, data.Y.iloc[i]), 
-                        # fontsize=6, 
-                        alpha=0.3, 
-                        ha='center', 
-                        va="bottom",
-                        )
-            if designator_selection:
-                for i, x in enumerate(data.X):
-                    self.ax.annotate(
-                        data['Ref. Designator'].iloc[i], 
-                        (x, data.Y.iloc[i]), 
-                        # fontsize=6, 
-                        alpha=0.3, 
-                        ha='center', 
-                        va="top",
-                        )
+        # choice = self.side_select.get()
+        # partnumber_selection = self.package_switch.get()
+        # designator_selection = self.designator_switch.get()
+        # df = self.dataset_converted
+        # if choice != "BOTH": 
+        #     df = df.query('Side == @choice')
+        # grouped = df.groupby('Part Number')
+        for index, df in self.dataset_converted.groupby(level=0, axis=1):
+            grouped = df[index].groupby('Part Number')
+            for partnumber, data in grouped:
+                self.ax.plot(
+                    data.X, 
+                    data.Y, 
+                    label = partnumber, 
+                    marker='s', 
+                    markersize=3, 
+                    alpha=0.5, 
+                    linestyle='',
+                    )
+        #     if partnumber_selection:
+        #         for i, x in enumerate(data.X):
+        #             self.ax.annotate(
+        #                 partnumber, 
+        #                 (x, data.Y.iloc[i]), 
+        #                 # fontsize=6, 
+        #                 alpha=0.3, 
+        #                 ha='center', 
+        #                 va="bottom",
+        #                 )
+        #     if designator_selection:
+        #         for i, x in enumerate(data.X):
+        #             self.ax.annotate(
+        #                 data['Ref. Designator'].iloc[i], 
+        #                 (x, data.Y.iloc[i]), 
+        #                 # fontsize=6, 
+        #                 alpha=0.3, 
+        #                 ha='center', 
+        #                 va="top",
+        #                 )
             
-        # self.ax.scatter(x,y)
-        # self.ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
-        #   ncol=8, fancybox=True, prop={'size': 5})
-        self.canvas.get_tk_widget()
-        self.fig.canvas.draw_idle()
-        self.update()
+        # # self.ax.scatter(x,y)
+        # # self.ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
+        # #   ncol=8, fancybox=True, prop={'size': 5})
+        # self.canvas.get_tk_widget()
+        # self.fig.canvas.draw_idle()
+        # self.update()
         
          
 if __name__ == "__main__":
