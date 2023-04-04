@@ -51,11 +51,11 @@ class App(customtkinter.CTk):
         self.sidebar()
         self.main_bar()
         self.draw_canvas()
-        self.plot_xyp()
         
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=20)
+        self.columnconfigure(2, weight=1)
         self.rowconfigure(0, weight= 1)
 
     def sidebar(self):
@@ -281,6 +281,8 @@ class App(customtkinter.CTk):
         self.insert_input_box(self.dataset)
         self.convert()
         self.set_status("File converted successfully")
+        print(self.dataset_converted)
+        self.plot_xyp(self.dataset_converted.X, self.dataset_converted.Y)
         
         self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
 
@@ -357,25 +359,26 @@ class App(customtkinter.CTk):
             self.set_status("Unable to export file: {}".format(str(e)))
 
     def draw_canvas(self):
-        fig, self.ax = plt.subplots()
-        fig.set_size_inches(5,5)
-        x,y = [1,2,3], [1,2,3]
-        self.ax.scatter(x,y)
-        self.ax.axis("off")
-        fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
-        self.canvas = FigureCanvasTkAgg(fig,master=self)
+        self.fig, self.ax = plt.subplots(figsize = (10/2.54,5.8/2.54))
+        # x,y = [1,2,3], [1,2,3]
+        # self.ax.scatter(x,y)
+        # self.ax.axis("off")
+        self.ax.set_aspect('equal') #Keeps ratio of the axis
+        # self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
+        self.canvas = FigureCanvasTkAgg(self.fig,master=self)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(
             row=0, 
             column=3, 
             padx=20, 
             pady=(20, 10),
+            sticky='n'
         )
         
-    def plot_xyp(self):
-        x,y = [1,2,3], [2,3,4]
+    def plot_xyp(self, x, y):
         self.ax.scatter(x,y)
         self.canvas.get_tk_widget()
+        self.fig.canvas.draw_idle()
         self.update()
         
          
