@@ -7,12 +7,20 @@ import re
 from PIL import Image
 from datetime import datetime
 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
+from pandastable import Table, TableModel
+
+plt.switch_backend("Agg") # Destroy app after closing
+
 # import version_query
 
 # try:
 #     # version_str = version_query.predict_version_str()
 # except Exception as e:
-version_str = '0.1.1'
+version_str = '0.2.1'
 
 try:
     import pyi_splash
@@ -23,8 +31,10 @@ except: pass
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-        window_width = 800
-        window_height = 800
+        
+        # self.state('zoomed')
+        window_width = 1920
+        window_height = 1080
         
         self.output_sep = '\t'
 
@@ -38,16 +48,20 @@ class App(customtkinter.CTk):
         self.geometry("{}x{}+{}+{}".format(window_width, window_height, center_x, center_y))
         self.title("XYPillar {}".format(version_str))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "XYpillar.ico") )
-        self.minsize(800, 750)
-        # self.maxsize(800, 750)
-        # self.attributes('-topmost',True) #Bring window on top
+        self.minsize(1920, 1080)
+        
         self.create_main_grid()
         self.sidebar()
         self.main_bar()
+        self.DataTable()
+        self.draw_plot_mainframe()
+        
         
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=20)
+        self.columnconfigure(1, weight=10)
+        self.columnconfigure(2, weight=20)
+        self.columnconfigure(3, weight=1)
         self.rowconfigure(0, weight= 1)
 
     def sidebar(self):
@@ -81,16 +95,60 @@ class App(customtkinter.CTk):
             pady=(20, 10))
 
 
-        self.button = customtkinter.CTkButton(master=self.sidebar_frame, 
+        self.open_button = customtkinter.CTkButton(master=self.sidebar_frame, 
                                               command=self.open_callback, 
                                               text="Open XYP File")
-        self.button.grid(row=2, column=0, padx=20, pady=10)
-
-        self.button = customtkinter.CTkButton(master=self.sidebar_frame, 
+        self.open_button.grid(row=2, column=0, padx=20, pady=10)
+        
+        #Create frame
+        self.table_buttons_frame = customtkinter.CTkFrame(
+            master=self.sidebar_frame, 
+            corner_radius=10,
+            )
+        self.table_buttons_frame.grid(
+            row=3, 
+            column=0, 
+            sticky="news",
+            padx=10, 
+            pady=10,
+        )
+        self.table_buttons_frame.columnconfigure(0, weight = 1)
+        self.table_buttons_frame.rowconfigure(0, weight = 1)
+        self.table_buttons_frame.rowconfigure(1, weight = 1)
+        self.apply_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
+                                              command=self.apply_table, 
+                                              text="Apply table")
+        self.apply_table_button.grid(
+            row=0, 
+            column=0, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+            )
+        self.table_buttons_frame.columnconfigure(0, weight = 1)
+        self.reset_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
+                                              command= self.update_table, 
+                                              text="Reset table")
+        self.reset_table_button.grid(
+            row=1, 
+            column=0, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+            )
+        
+        self.export_button = customtkinter.CTkButton(master=self.sidebar_frame, 
                                               command=self.save, 
                                               text="Export")
-        self.button.grid(row=3, column=0, padx=20, pady=10, sticky="n")
+        self.export_button.grid(row=4, column=0, padx=20, pady=10, sticky="n")
     
+    def apply_table(self):
+        self.dataset_converted = self.table.model.df
+        self.clear_out_box()
+        self.plot_xyp()
+        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
+        self.update()
+        
     def main_bar(self):
         self.main_frame = customtkinter.CTkFrame(self, fg_color='transparent', corner_radius=0)
         self.main_frame.grid(row=0, column=1, sticky="news")
@@ -206,7 +264,28 @@ class App(customtkinter.CTk):
             pady=10,
             sticky="news"
             )
+        
+    def DataTable(self):
+        self.datatable_frame = customtkinter.CTkFrame(self)
+        self.datatable_frame.grid(
+            row=0, 
+            column=2, 
+            sticky="news",
+            padx=20, 
+            pady=20
+            )
 
+        self.table = Table(self.datatable_frame, 
+                           dataframe=pd.DataFrame(),
+                           showtoolbar=True, 
+                           showstatusbar=True)
+        self.table.show()
+        
+    def update_table(self):
+        self.table.resetIndex(False)
+        self.table.updateModel(TableModel(self.dataset_converted))
+        self.table.redraw()
+        
     def set_status(self, status):
         self.statusbox.configure(state='normal')
         self.statusbox.insert('0.0', "{}: {}\n".format(datetime.now(),status))
@@ -243,6 +322,10 @@ class App(customtkinter.CTk):
         self.out_box.delete('0.0', customtkinter.END)
         self.out_box.insert('0.0', data)
         self.out_box.configure(state='disabled')
+
+    def clear_plot(self):
+        self.ax.cla() 
+        self.fig.canvas.draw_idle()
         
     def clean_all(self):
         self.clear_file_name_box()
@@ -250,6 +333,8 @@ class App(customtkinter.CTk):
         self.clear_out_box()
         self.dataset = None
         self.input_file_name = None
+        #Clearing plot
+        self.clear_plot()
         
     def open_callback(self):
         self.clean_all()
@@ -273,9 +358,10 @@ class App(customtkinter.CTk):
         self.insert_input_box(self.dataset)
         self.convert()
         self.set_status("File converted successfully")
-        
+        self.update_table()
+        self.plot_xyp()
         self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
-
+    
     def convert(self):
         parts = self.dataset.split('# Layout position')[1]
         #Read first board position
@@ -347,8 +433,126 @@ class App(customtkinter.CTk):
 
         except Exception as e:
             self.set_status("Unable to export file: {}".format(str(e)))
-
-
+        
+    def draw_plot_mainframe(self):
+        #Create main frame with configuration
+        self.plot_frame = customtkinter.CTkFrame(self, corner_radius=20)
+        self.plot_frame.grid(
+            row=0, 
+            column=3, 
+            sticky="news",
+            padx=20, 
+            pady=20
+            )
+        self.plot_frame.columnconfigure(0, weight=1)
+        self.plot_frame.rowconfigure(0, weight= 1)
+        self.plot_frame.rowconfigure(1, weight= 20)
+        self.plot_frame.rowconfigure(2, weight= 1)
+        #Create frame for buttons
+        self.plot_buttons_frame = customtkinter.CTkFrame(
+            master=self.plot_frame, 
+            corner_radius=20
+            )
+        self.plot_buttons_frame.grid(
+            row=0, 
+            column=0, 
+            sticky="news",
+            padx=10, 
+            pady=10,
+            )
+        self.plot_buttons_frame.columnconfigure(0, weight=1)
+        self.plot_buttons_frame.columnconfigure(1, weight=1)
+        self.side_select = customtkinter.CTkOptionMenu(master=self.plot_buttons_frame,
+                                       values=["BOTH", "TOP", "BOTTOM"],
+                                       command=self.plot_xyp)
+        self.side_select.grid(
+            row=0, 
+            column=0, 
+            # sticky="w",
+            padx=10, 
+            pady=10,
+        )
+        self.pachage_switch = customtkinter.CTkSwitch(
+            master=self.plot_buttons_frame, 
+            text="Package Names", 
+            command=self.plot_xyp,
+            onvalue=True, 
+            offvalue=False
+            )
+        self.pachage_switch.grid(
+            row=0, 
+            column=1, 
+            # sticky="w",
+            padx=10, 
+            pady=10,
+        )
+        
+        
+        self.fig, self.ax = plt.subplots(
+            # figsize = (10/2.54,5.8/2.54)
+            )
+        self.canvas = FigureCanvasTkAgg(self.fig,master= self.plot_frame)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().grid(
+            row=1, 
+            column=0, 
+            # padx=20, 
+            # pady= 20,
+            sticky='news'
+        )
+        #Matplotlib Toolbar
+        toolbarFrame = customtkinter.CTkFrame(self.plot_frame)
+        toolbarFrame.grid(row=2,column=0)
+        self.toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)   
+        
+    def plot_xyp(self, selection=None):
+        if not hasattr(self, 'dataset_converted') : return #Check of you have no data
+        self.clear_plot() #Clear plot
+        #Make layout adjustments
+        self.fig.tight_layout()
+        self.ax.set_xlim(0,100)
+        self.ax.set_ylim(0,58)
+        self.ax.xaxis.set_major_locator(ticker.MultipleLocator(4))
+        self.ax.yaxis.set_major_locator(ticker.MultipleLocator(4))
+        self.ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+        self.ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+        self.ax.set_aspect('equal') #Keeps ratio of the axis
+        
+        choice = self.side_select.get()
+        partnumber_selection = self.pachage_switch.get()
+        df = self.dataset_converted
+        if choice != "BOTH": 
+            df = df.query('Side == @choice')
+        grouped = df.groupby('Part Number')
+        # grouped.plot("X",'Y', ax=self.ax, kind='scatter')
+        for partnumber, data in grouped:
+            self.ax.plot(
+                data.X, 
+                data.Y, 
+                label = partnumber, 
+                marker='s', 
+                markersize=3, 
+                alpha=0.5, 
+                linestyle='',
+                )
+            if partnumber_selection:
+                for i, x in enumerate(data.X):
+                    self.ax.annotate(
+                        partnumber, 
+                        (x, data.Y.iloc[i]), 
+                        # fontsize=6, 
+                        alpha=0.3, 
+                        ha='center', 
+                        va="bottom",
+                        )
+        # self.ax.scatter(x,y)
+        # self.ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
+        #   ncol=8, fancybox=True, prop={'size': 5})
+        self.canvas.get_tk_widget()
+        self.fig.canvas.draw_idle()
+        self.update()
+        
+         
 if __name__ == "__main__":
     app = App()
     app.mainloop()
