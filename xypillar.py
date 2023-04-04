@@ -9,10 +9,9 @@ from datetime import datetime
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import matplotlib.pyplot as plt
-import matplotlib
 import matplotlib.ticker as ticker
 
-matplotlib.use("Agg") # Destroy app after closing
+plt.switch_backend("Agg") # Destroy app after closing
 
 # import version_query
 
@@ -372,8 +371,17 @@ class App(customtkinter.CTk):
         self.plot_frame.rowconfigure(1, weight= 20)
         self.plot_frame.rowconfigure(2, weight= 1)
         #Create frame for buttons
-        self.plot_buttons_frame = customtkinter.CTkFrame(master=self.plot_frame)
-        self.plot_buttons_frame.grid(row=0, column=0, sticky="news")
+        self.plot_buttons_frame = customtkinter.CTkFrame(
+            master=self.plot_frame, 
+            corner_radius=20
+            )
+        self.plot_buttons_frame.grid(
+            row=0, 
+            column=0, 
+            sticky="news",
+            padx=10, 
+            pady=10,
+            )
         self.plot_buttons_frame.columnconfigure(0, weight=1)
         self.plot_buttons_frame.columnconfigure(0, weight=1)
         self.side_select = customtkinter.CTkOptionMenu(master=self.plot_buttons_frame,
