@@ -11,7 +11,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from pandastable import Table, TableModel
+from pandastable import Table, TableModel, config
 
 plt.switch_backend("Agg") # Destroy app after closing
 
@@ -59,7 +59,7 @@ class App(customtkinter.CTk):
         
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=10)
+        self.columnconfigure(1, weight=5)
         self.columnconfigure(2, weight=20)
         self.columnconfigure(3, weight=1)
         self.rowconfigure(0, weight= 1)
@@ -143,7 +143,11 @@ class App(customtkinter.CTk):
         self.export_button.grid(row=4, column=0, padx=20, pady=10, sticky="n")
     
     def apply_table(self):
-        self.dataset_converted = self.table.model.df
+        df = self.table.model.df
+        if df.empty: 
+            return
+        else:
+            self.dataset_converted = df
         self.clear_out_box()
         self.plot_xyp()
         self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
@@ -274,16 +278,31 @@ class App(customtkinter.CTk):
             padx=20, 
             pady=20
             )
+        self.datatable_frame = customtkinter.CTkFrame(self)
+        self.datatable_frame.grid(
+            row=0, 
+            column=2, 
+            sticky="news",
+            padx=20, 
+            pady=20
+            )
 
         self.table = Table(self.datatable_frame, 
                            dataframe=pd.DataFrame(),
-                           showtoolbar=True, 
-                           showstatusbar=True)
+                        #    showtoolbar=True, 
+                            width=300, maxcellwidth=200,
+                           showstatusbar=True,
+                           )
         self.table.show()
         
     def update_table(self):
         self.table.resetIndex(False)
         self.table.updateModel(TableModel(self.dataset_converted))
+        options = {'fontsize':9, 'align':'center'}
+        config.apply_options(options, self.table)
+        self.table.adjustColumnWidths()
+        # self.table.multiplecollist = [2]
+        # self.table.setColorbyValue()
         self.table.redraw()
         
     def set_status(self, status):
@@ -472,16 +491,30 @@ class App(customtkinter.CTk):
             padx=10, 
             pady=10,
         )
-        self.pachage_switch = customtkinter.CTkSwitch(
+        self.package_switch = customtkinter.CTkSwitch(
             master=self.plot_buttons_frame, 
             text="Package Names", 
             command=self.plot_xyp,
             onvalue=True, 
             offvalue=False
             )
-        self.pachage_switch.grid(
+        self.package_switch.grid(
             row=0, 
             column=1, 
+            # sticky="w",
+            padx=10, 
+            pady=10,
+        )
+        self.designator_switch = customtkinter.CTkSwitch(
+            master=self.plot_buttons_frame, 
+            text="Designator", 
+            command=self.plot_xyp,
+            onvalue=True, 
+            offvalue=False
+            )
+        self.designator_switch.grid(
+            row=0, 
+            column=3, 
             # sticky="w",
             padx=10, 
             pady=10,
@@ -503,7 +536,7 @@ class App(customtkinter.CTk):
         #Matplotlib Toolbar
         toolbarFrame = customtkinter.CTkFrame(self.plot_frame)
         toolbarFrame.grid(row=2,column=0)
-        self.toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)   
+        self.toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)
         
     def plot_xyp(self, selection=None):
         if not hasattr(self, 'dataset_converted') : return #Check of you have no data
@@ -519,7 +552,8 @@ class App(customtkinter.CTk):
         self.ax.set_aspect('equal') #Keeps ratio of the axis
         
         choice = self.side_select.get()
-        partnumber_selection = self.pachage_switch.get()
+        partnumber_selection = self.package_switch.get()
+        designator_selection = self.designator_switch.get()
         df = self.dataset_converted
         if choice != "BOTH": 
             df = df.query('Side == @choice')
@@ -545,6 +579,17 @@ class App(customtkinter.CTk):
                         ha='center', 
                         va="bottom",
                         )
+            if designator_selection:
+                for i, x in enumerate(data.X):
+                    self.ax.annotate(
+                        data['Ref. Designator'].iloc[i], 
+                        (x, data.Y.iloc[i]), 
+                        # fontsize=6, 
+                        alpha=0.3, 
+                        ha='center', 
+                        va="top",
+                        )
+            
         # self.ax.scatter(x,y)
         # self.ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
         #   ncol=8, fancybox=True, prop={'size': 5})
