@@ -364,8 +364,14 @@ class App(customtkinter.CTk):
         
     def draw_plot_mainframe(self):
         #Create main frame with configuration
-        self.plot_frame = customtkinter.CTkFrame(self)
-        self.plot_frame.grid(row=0, column=2, sticky="news")
+        self.plot_frame = customtkinter.CTkFrame(self, corner_radius=20)
+        self.plot_frame.grid(
+            row=0, 
+            column=2, 
+            sticky="news",
+            padx=20, 
+            pady=20
+            )
         self.plot_frame.columnconfigure(0, weight=1)
         self.plot_frame.rowconfigure(0, weight= 1)
         self.plot_frame.rowconfigure(1, weight= 20)
@@ -383,17 +389,32 @@ class App(customtkinter.CTk):
             pady=10,
             )
         self.plot_buttons_frame.columnconfigure(0, weight=1)
-        self.plot_buttons_frame.columnconfigure(0, weight=1)
+        self.plot_buttons_frame.columnconfigure(1, weight=1)
         self.side_select = customtkinter.CTkOptionMenu(master=self.plot_buttons_frame,
                                        values=["BOTH", "TOP", "BOTTOM"],
                                        command=self.plot_xyp)
         self.side_select.grid(
             row=0, 
             column=0, 
-            sticky="n",
+            # sticky="w",
             padx=10, 
             pady=10,
         )
+        self.pachage_switch = customtkinter.CTkSwitch(
+            master=self.plot_buttons_frame, 
+            text="Package Names", 
+            command=self.plot_xyp,
+            onvalue=True, 
+            offvalue=False
+            )
+        self.pachage_switch.grid(
+            row=0, 
+            column=1, 
+            # sticky="w",
+            padx=10, 
+            pady=10,
+        )
+        
         
         self.fig, self.ax = plt.subplots(
             # figsize = (10/2.54,5.8/2.54)
@@ -403,8 +424,8 @@ class App(customtkinter.CTk):
         self.canvas.get_tk_widget().grid(
             row=1, 
             column=0, 
-            padx=20, 
-            pady= 20,
+            # padx=20, 
+            # pady= 20,
             sticky='news'
         )
         #Matplotlib Toolbar
@@ -426,15 +447,31 @@ class App(customtkinter.CTk):
         self.ax.set_aspect('equal') #Keeps ratio of the axis
         
         choice = self.side_select.get()
+        partnumber_selection = self.pachage_switch.get()
         df = self.dataset_converted
         if choice != "BOTH": 
             df = df.query('Side == @choice')
         grouped = df.groupby('Part Number')
         # grouped.plot("X",'Y', ax=self.ax, kind='scatter')
         for partnumber, data in grouped:
-            self.ax.plot(data.X, data.Y, label = partnumber, marker='s', alpha=0.5, linestyle='')
-            for i, x in enumerate(data.X):
-                self.ax.annotate(partnumber, (x, data.Y.iloc[i]), fontsize=8, alpha=0.5, ha='center')
+            self.ax.plot(
+                data.X, 
+                data.Y, 
+                label = partnumber, 
+                marker='s', 
+                markersize=3, 
+                alpha=0.5, 
+                linestyle='',
+                )
+            if partnumber_selection:
+                for i, x in enumerate(data.X):
+                    self.ax.annotate(
+                        partnumber, 
+                        (x, data.Y.iloc[i]), 
+                        fontsize=6, 
+                        alpha=0.5, 
+                        ha='center', 
+                        va="bottom")
         # self.ax.scatter(x,y)
         # self.ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
         #   ncol=8, fancybox=True, prop={'size': 5})
