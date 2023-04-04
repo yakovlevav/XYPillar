@@ -20,7 +20,7 @@ plt.switch_backend("Agg") # Destroy app after closing
 # try:
 #     # version_str = version_query.predict_version_str()
 # except Exception as e:
-version_str = '0.1.1'
+version_str = '0.2.1'
 
 try:
     import pyi_splash
@@ -31,8 +31,10 @@ except: pass
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-        window_width = 1500
-        window_height = 800
+        
+        # self.state('zoomed')
+        window_width = 1920
+        window_height = 1080
         
         self.output_sep = '\t'
 
@@ -46,12 +48,14 @@ class App(customtkinter.CTk):
         self.geometry("{}x{}+{}+{}".format(window_width, window_height, center_x, center_y))
         self.title("XYPillar {}".format(version_str))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "XYpillar.ico") )
-        self.minsize(1500, 750)
+        self.minsize(1920, 1080)
+        
         self.create_main_grid()
         self.sidebar()
         self.main_bar()
         self.DataTable()
         self.draw_plot_mainframe()
+        
         
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
@@ -95,11 +99,6 @@ class App(customtkinter.CTk):
                                               command=self.open_callback, 
                                               text="Open XYP File")
         self.open_button.grid(row=2, column=0, padx=20, pady=10)
-
-        self.export_button = customtkinter.CTkButton(master=self.sidebar_frame, 
-                                              command=self.save, 
-                                              text="Export")
-        self.export_button.grid(row=3, column=0, padx=20, pady=10, sticky="n")
         
         #Create frame
         self.table_buttons_frame = customtkinter.CTkFrame(
@@ -107,13 +106,15 @@ class App(customtkinter.CTk):
             corner_radius=10,
             )
         self.table_buttons_frame.grid(
-            row=4, 
+            row=3, 
             column=0, 
             sticky="news",
             padx=10, 
             pady=10,
         )
         self.table_buttons_frame.columnconfigure(0, weight = 1)
+        self.table_buttons_frame.rowconfigure(0, weight = 1)
+        self.table_buttons_frame.rowconfigure(1, weight = 1)
         self.apply_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
                                               command=self.apply_table, 
                                               text="Apply table")
@@ -124,27 +125,33 @@ class App(customtkinter.CTk):
             pady=10, 
             sticky="news"
             )
+        self.table_buttons_frame.columnconfigure(0, weight = 1)
+        self.reset_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
+                                              command= self.update_table, 
+                                              text="Reset table")
+        self.reset_table_button.grid(
+            row=1, 
+            column=0, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+            )
+        
+        self.export_button = customtkinter.CTkButton(master=self.sidebar_frame, 
+                                              command=self.save, 
+                                              text="Export")
+        self.export_button.grid(row=4, column=0, padx=20, pady=10, sticky="n")
     
     def apply_table(self):
         self.dataset_converted = self.table.model.df
+        self.clear_out_box()
+        self.plot_xyp()
+        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
+        self.update()
         
     def main_bar(self):
-        self.tab_view = customtkinter.CTkTabview(master=self)
-        self.tab_view.grid(row=0, 
-                           column=1, 
-                           padx=10, 
-                           pady=10,
-                           sticky='news'
-                           )
-        self.tab_view.add("Text Data")
-        self.tab_view.add("Edit Table")
-        self.tab_view.tab("Text Data").columnconfigure(0, weight=1)
-        self.tab_view.tab("Text Data").rowconfigure(0, weight=1)
-        self.tab_view.tab("Edit Table").columnconfigure(0, weight=1)
-        self.tab_view.tab("Edit Table").rowconfigure(0, weight=1)
-
-        self.main_frame = customtkinter.CTkFrame(self.tab_view.tab("Text Data"), fg_color='transparent', corner_radius=0)
-        self.main_frame.grid(row=0, column=0, sticky="news")
+        self.main_frame = customtkinter.CTkFrame(self, fg_color='transparent', corner_radius=0)
+        self.main_frame.grid(row=0, column=1, sticky="news")
         self.main_frame.columnconfigure(0, weight=1)
         self.main_frame.columnconfigure(1, weight=10)
         self.main_frame.rowconfigure(0, weight= 1)
@@ -268,15 +275,16 @@ class App(customtkinter.CTk):
             pady=20
             )
 
-        if not hasattr(self, 'dataset_converted') : 
-            df = pd.DataFrame() #Check of you have no data
-        else:
-            df = self.dataset_converted
         self.table = Table(self.datatable_frame, 
-                           dataframe=df,
+                           dataframe=pd.DataFrame(),
                            showtoolbar=True, 
                            showstatusbar=True)
         self.table.show()
+        
+    def update_table(self):
+        self.table.resetIndex(False)
+        self.table.updateModel(TableModel(self.dataset_converted))
+        self.table.redraw()
         
     def set_status(self, status):
         self.statusbox.configure(state='normal')
@@ -350,11 +358,10 @@ class App(customtkinter.CTk):
         self.insert_input_box(self.dataset)
         self.convert()
         self.set_status("File converted successfully")
-        self.DataTable()
+        self.update_table()
         self.plot_xyp()
-        
         self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
-
+    
     def convert(self):
         parts = self.dataset.split('# Layout position')[1]
         #Read first board position
