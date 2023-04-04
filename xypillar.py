@@ -10,6 +10,7 @@ from datetime import datetime
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.ticker as ticker
 
 matplotlib.use("Agg") # Destroy app after closing
 
@@ -44,13 +45,11 @@ class App(customtkinter.CTk):
         self.geometry("{}x{}+{}+{}".format(window_width, window_height, center_x, center_y))
         self.title("XYPillar {}".format(version_str))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "XYpillar.ico") )
-        self.minsize(1200, 750)
-        # self.maxsize(800, 750)
-        # self.attributes('-topmost',True) #Bring window on top
+        self.minsize(1500, 750)
         self.create_main_grid()
         self.sidebar()
         self.main_bar()
-        self.draw_canvas()
+        self.draw_plot_mainframe()
         
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
@@ -251,6 +250,10 @@ class App(customtkinter.CTk):
         self.out_box.delete('0.0', customtkinter.END)
         self.out_box.insert('0.0', data)
         self.out_box.configure(state='disabled')
+
+    def clear_plot(self):
+        self.ax.cla() 
+        self.fig.canvas.draw_idle()
         
     def clean_all(self):
         self.clear_file_name_box()
@@ -258,6 +261,8 @@ class App(customtkinter.CTk):
         self.clear_out_box()
         self.dataset = None
         self.input_file_name = None
+        #Clearing plot
+        self.clear_plot()
         
     def open_callback(self):
         self.clean_all()
@@ -357,41 +362,66 @@ class App(customtkinter.CTk):
 
         except Exception as e:
             self.set_status("Unable to export file: {}".format(str(e)))
-
-    def draw_canvas(self):
+        
+    def draw_plot_mainframe(self):
+        #Create main frame with configuration
         self.plot_frame = customtkinter.CTkFrame(self)
         self.plot_frame.grid(row=0, column=2, sticky="news")
         self.plot_frame.columnconfigure(0, weight=1)
         self.plot_frame.rowconfigure(0, weight= 1)
+        self.plot_frame.rowconfigure(1, weight= 20)
+        self.plot_frame.rowconfigure(2, weight= 1)
+        #Create frame for buttons
+        self.plot_buttons_frame = customtkinter.CTkFrame(master=self.plot_frame)
+        self.plot_buttons_frame.grid(row=0, column=0, sticky="news")
+        self.plot_buttons_frame.columnconfigure(0, weight=1)
+        self.plot_buttons_frame.columnconfigure(0, weight=1)
+        self.side_select = customtkinter.CTkOptionMenu(master=self.plot_buttons_frame,
+                                       values=["BOTH", "TOP", "BOTTOM"],
+                                       command=self.plot_xyp)
+        self.side_select.grid(
+            row=0, 
+            column=0, 
+            sticky="n",
+            padx=10, 
+            pady=10,
+        )
+        
         self.fig, self.ax = plt.subplots(
             # figsize = (10/2.54,5.8/2.54)
             )
-        # self.fig.tight_layout()
-        self.ax.set_xlim(0,100)
-        self.ax.set_ylim(0,58)
-        
-        # x,y = [1,2,3], [1,2,3]
-        # self.ax.scatter(x,y)
-        # self.ax.axis("off")
-        self.ax.set_aspect('equal') #Keeps ratio of the axis
-        # self.fig.subplots_adjust(left=1, right=1, bottom=0, top=1, wspace=0, hspace=0)
         self.canvas = FigureCanvasTkAgg(self.fig,master= self.plot_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(
-            row=0, 
+            row=1, 
             column=0, 
             padx=20, 
             pady= 20,
             sticky='news'
         )
+        #Matplotlib Toolbar
         toolbarFrame = customtkinter.CTkFrame(self.plot_frame)
         toolbarFrame.grid(row=2,column=0)
-        self.toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)
-        # self.toolbar.update()
-
+        self.toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)   
         
-    def plot_xyp(self):
-        grouped = self.dataset_converted.groupby('Part Number')
+    def plot_xyp(self, selection=None):
+        if not hasattr(self, 'dataset_converted') : return #Check of you have no data
+        self.clear_plot() #Clear plot
+        #Make layout adjustments
+        self.fig.tight_layout()
+        self.ax.set_xlim(0,100)
+        self.ax.set_ylim(0,58)
+        self.ax.xaxis.set_major_locator(ticker.MultipleLocator(4))
+        self.ax.yaxis.set_major_locator(ticker.MultipleLocator(4))
+        self.ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+        self.ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+        self.ax.set_aspect('equal') #Keeps ratio of the axis
+        
+        choice = self.side_select.get()
+        df = self.dataset_converted
+        if choice != "BOTH": 
+            df = df.query('Side == @choice')
+        grouped = df.groupby('Part Number')
         # grouped.plot("X",'Y', ax=self.ax, kind='scatter')
         for partnumber, data in grouped:
             self.ax.plot(data.X, data.Y, label = partnumber, marker='s', alpha=0.5, linestyle='')
