@@ -7,7 +7,7 @@ import re
 from PIL import Image
 from datetime import datetime
 
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import matplotlib.pyplot as plt
 import matplotlib
 
@@ -29,7 +29,7 @@ except: pass
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-        window_width = 800
+        window_width = 1500
         window_height = 800
         
         self.output_sep = '\t'
@@ -282,7 +282,7 @@ class App(customtkinter.CTk):
         self.convert()
         self.set_status("File converted successfully")
         print(self.dataset_converted)
-        self.plot_xyp(self.dataset_converted.X, self.dataset_converted.Y)
+        self.plot_xyp()
         
         self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
 
@@ -359,24 +359,47 @@ class App(customtkinter.CTk):
             self.set_status("Unable to export file: {}".format(str(e)))
 
     def draw_canvas(self):
-        self.fig, self.ax = plt.subplots(figsize = (10/2.54,5.8/2.54))
+        self.plot_frame = customtkinter.CTkFrame(self)
+        self.plot_frame.grid(row=0, column=2, sticky="news")
+        self.plot_frame.columnconfigure(0, weight=1)
+        self.plot_frame.rowconfigure(0, weight= 1)
+        self.fig, self.ax = plt.subplots(
+            # figsize = (10/2.54,5.8/2.54)
+            )
+        # self.fig.tight_layout()
+        self.ax.set_xlim(0,100)
+        self.ax.set_ylim(0,58)
+        
         # x,y = [1,2,3], [1,2,3]
         # self.ax.scatter(x,y)
         # self.ax.axis("off")
         self.ax.set_aspect('equal') #Keeps ratio of the axis
-        # self.fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
-        self.canvas = FigureCanvasTkAgg(self.fig,master=self)
+        # self.fig.subplots_adjust(left=1, right=1, bottom=0, top=1, wspace=0, hspace=0)
+        self.canvas = FigureCanvasTkAgg(self.fig,master= self.plot_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(
             row=0, 
-            column=3, 
+            column=0, 
             padx=20, 
-            pady=(20, 10),
-            sticky='n'
+            pady= 20,
+            sticky='news'
         )
+        toolbarFrame = customtkinter.CTkFrame(self.plot_frame)
+        toolbarFrame.grid(row=2,column=0)
+        self.toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)
+        # self.toolbar.update()
+
         
-    def plot_xyp(self, x, y):
-        self.ax.scatter(x,y)
+    def plot_xyp(self):
+        grouped = self.dataset_converted.groupby('Part Number')
+        # grouped.plot("X",'Y', ax=self.ax, kind='scatter')
+        for partnumber, data in grouped:
+            self.ax.plot(data.X, data.Y, label = partnumber, marker='s', alpha=0.5, linestyle='')
+            for i, x in enumerate(data.X):
+                self.ax.annotate(partnumber, (x, data.Y.iloc[i]), fontsize=8, alpha=0.5, ha='center')
+        # self.ax.scatter(x,y)
+        # self.ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
+        #   ncol=8, fancybox=True, prop={'size': 5})
         self.canvas.get_tk_widget()
         self.fig.canvas.draw_idle()
         self.update()
