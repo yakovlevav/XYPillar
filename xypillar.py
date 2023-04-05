@@ -58,12 +58,11 @@ class App(customtkinter.CTk):
         self.main_bar()
         self.DataTable()
         self.draw_plot_mainframe()
-        
-        
+    
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=5)
-        self.columnconfigure(2, weight=5)
+        self.columnconfigure(2, weight=2)
         self.columnconfigure(3, weight=1)
         self.rowconfigure(0, weight= 1)
 
@@ -252,7 +251,7 @@ class App(customtkinter.CTk):
         self.main_frame.rowconfigure(2, weight= 1)
         self.main_frame.rowconfigure(3, weight= 100)
         self.main_frame.rowconfigure(4, weight= 1)
-        self.main_frame.rowconfigure(5, weight= 100)
+        self.main_frame.rowconfigure(5, weight= 20)
         
         self.input = customtkinter.CTkLabel(
             master=self.main_frame, 
@@ -461,7 +460,7 @@ class App(customtkinter.CTk):
             df = df.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
             d.update({df.BoardNumber.iloc[0] : df})
             
-        # #Read glob fiducials
+        #Read glob fiducials
         gfids = pd.read_csv(StringIO(boards[-2]),
                             sep='|', 
                             comment = "#",
@@ -472,7 +471,7 @@ class App(customtkinter.CTk):
         gfids['Package'] = 'GFID'
         gfids['BoardNumber'] = 'Panel'
         gfids['Rotation'] = 0
-        gfids.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+        gfids = gfids.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         d.update({'glob_fids':gfids})
         # Concat all dataframe to multi index
         self.dataset_converted = self.dataset_converted_clean = pd.concat(d.values(), keys=d.keys(), axis=0)
