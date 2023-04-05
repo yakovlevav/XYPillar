@@ -442,7 +442,10 @@ class App(customtkinter.CTk):
         self.update_table()
         self.plot_xyp()
         self.set_status("Data ready for review")
-        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
+        df = self.dataset_converted
+        df = df.drop('BoardNumber', axis = 1)
+        df = df.to_csv(index=False, sep=self.output_sep)
+        self.insert_out_box(df)
         self.board_filter_selector()
                     
     def convert(self):
@@ -491,7 +494,7 @@ class App(customtkinter.CTk):
             self.set_status("No output path selected!")
             return
         try:
-            self.dataset_converted.to_csv(self.output_file_path, index=False, sep=self.output_sep, mode='w')
+            self.dataset_converted.drop('BoardNumber', axis = 1).to_csv(self.output_file_path, index=False, sep=self.output_sep, mode='w')
             self.set_status("File path: {}".format(self.output_file_path))
             self.set_status("File saved successfully")
 
