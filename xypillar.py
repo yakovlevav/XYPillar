@@ -1,5 +1,5 @@
 import customtkinter
-from tkinter import messagebox
+from tkinter import messagebox, StringVar
 import pandas as pd
 import os
 from io import StringIO
@@ -109,7 +109,7 @@ class App(customtkinter.CTk):
             corner_radius=10,
             )
         self.table_buttons_frame.grid(
-            row=3, 
+            row=4, 
             column=0, 
             sticky="news",
             padx=10, 
@@ -118,11 +118,23 @@ class App(customtkinter.CTk):
         self.table_buttons_frame.columnconfigure(0, weight = 1)
         self.table_buttons_frame.rowconfigure(0, weight = 1)
         self.table_buttons_frame.rowconfigure(1, weight = 1)
+        self.status = customtkinter.CTkLabel(
+            master=self.table_buttons_frame, 
+            text="Table control", 
+            anchor='w'
+            )
+        self.status.grid(
+            row=0, 
+            column=0, 
+            padx=20, 
+            pady=0,
+            sticky="news"
+            )
         self.apply_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
                                               command=self.apply_table, 
                                               text="Apply table")
         self.apply_table_button.grid(
-            row=0, 
+            row=1, 
             column=0, 
             padx=10, 
             pady=10, 
@@ -130,10 +142,10 @@ class App(customtkinter.CTk):
             )
         self.table_buttons_frame.columnconfigure(0, weight = 1)
         self.reset_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
-                                              command= self.update_table, 
+                                              command= self.reset_table, 
                                               text="Reset table")
         self.reset_table_button.grid(
-            row=1, 
+            row=2, 
             column=0, 
             padx=10, 
             pady=10, 
@@ -143,29 +155,34 @@ class App(customtkinter.CTk):
         self.export_button = customtkinter.CTkButton(master=self.sidebar_frame, 
                                               command=self.save, 
                                               text="Export")
-        self.export_button.grid(row=4, column=0, padx=20, pady=10, sticky="n")
+        self.export_button.grid(row=5, column=0, padx=20, pady=10, sticky="n")
     
-    def board_filder_selector(self):
+    def reset_table(self):
+        self.dataset_converted = self.dataset_converted_clean
+        self.update_table()
+        
+    def board_filter_selector(self):
         if not hasattr(self, 'dataset_converted') : return #Check of you have no data
         self.selector_boards = customtkinter.CTkFrame(
             master=self.sidebar_frame, 
             corner_radius=10,
             )
         self.selector_boards.grid(
-            row=5, 
+            row=3, 
             column=0, 
             padx=10, 
             pady=10, 
             sticky="news"
             )
-
+        
+        self.board_selectors = []
         for i, k in enumerate(self.dataset_converted.BoardNumber.unique()):
             checkbox = customtkinter.CTkCheckBox(
                 master=self.selector_boards, 
                 text=k,
-                # variable=True,
                 onvalue=True, 
-                offvalue=False
+                offvalue=False,
+                # command=self.filter_selected_boards
                 )
             checkbox.grid(
                 row=i, 
@@ -174,8 +191,26 @@ class App(customtkinter.CTk):
                 pady=10, 
                 sticky="news"
                 )
-        self.update()
+            # checkbox.toggle()
+            self.board_selectors.append((k,checkbox))
+        self.filter_boards = customtkinter.CTkButton(master=self.selector_boards, 
+                                              command=self.filter_selected_boards, 
+                                              text="Select Boards")
+        self.filter_boards.grid(row=i+1, column=0, padx=20, pady=10, sticky="n")
     
+    def filter_selected_boards(self):
+        if not hasattr(self, 'dataset_converted') : return #Check of you have no data
+        df = self.dataset_converted
+        if df.empty and not self.board_selectors:
+            return
+        filter = []
+        for board_position, value in self.board_selectors:
+            if value.get(): filter.append(board_position) 
+        
+        df = df[df['BoardNumber'].isin(filter)]
+        self.table.updateModel(TableModel(df))
+        self.table.redraw()
+        
     def apply_table(self):
         df = self.table.model.df
         if df.empty: 
@@ -315,14 +350,14 @@ class App(customtkinter.CTk):
 
         self.table = Table(self.datatable_frame, 
                            dataframe=pd.DataFrame(),
-                        #    showtoolbar=True, 
-                            width=300, maxcellwidth=200,
+                           showtoolbar=True, 
+                           width=300, maxcellwidth=200,
                            showstatusbar=True,
                            )
         self.table.show()
         
     def update_table(self):
-        self.table.resetIndex(False)
+        # self.table.resetIndex(False)
         self.table.updateModel(TableModel(self.dataset_converted))
         options = {'fontsize':9, 'align':'center'}
         config.apply_options(options, self.table)
@@ -408,7 +443,7 @@ class App(customtkinter.CTk):
         self.plot_xyp()
         self.set_status("Data ready for review")
         self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
-        self.board_filder_selector()
+        self.board_filter_selector()
                     
     def convert(self):
         boards = self.dataset.split('\n\n')
@@ -445,7 +480,7 @@ class App(customtkinter.CTk):
         gfids.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         d.update({'glob_fids':gfids})
         # Concat all dataframe to multi index
-        self.dataset_converted = pd.concat(d.values(), keys=d.keys(), axis=0)
+        self.dataset_converted = self.dataset_converted_clean = pd.concat(d.values(), keys=d.keys(), axis=0)
 
     def save(self):
         if not self.input_file_name:return
