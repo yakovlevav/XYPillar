@@ -12,6 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.widgets import RadioButtons
+import numpy as np
 
 from pandastable import Table, TableModel, config
 
@@ -152,8 +153,7 @@ class App(customtkinter.CTk):
             self.dataset_converted = df
         self.clear_out_box()
         self.plot_xyp()
-        self.update_flat_df()
-        self.insert_out_box(self.df_flat.to_csv(index=False, sep=self.output_sep))
+        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
         self.update()
         
     def main_bar(self):
@@ -347,6 +347,7 @@ class App(customtkinter.CTk):
         self.clear_out_box()
         self.dataset = None
         self.input_file_name = None
+        self.dataset_converted = pd.DataFrame()
         #Clearing plot
         self.clear_plot()
         self.set_status("All cleared!")
@@ -375,13 +376,8 @@ class App(customtkinter.CTk):
         self.update_table()
         self.plot_xyp()
         self.set_status("Data ready for review")
-        self.insert_out_box(self.df_flat.to_csv(index=False, sep=self.output_sep))
-    
-    def update_flat_df(self):
-        self.df_flat = pd.DataFrame()
-        for index, df in self.dataset_converted.groupby(level=0, axis=1):
-            self.df_flat = pd.concat([self.df_flat, df[index]]).dropna()
-            
+        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
+                    
     def convert(self):
         boards = self.dataset.split('\n\n')
         def board_converter(board_data):
@@ -389,10 +385,10 @@ class App(customtkinter.CTk):
                             sep='|',
                             comment = "#",
                             # skiprows=1,
-                            names = ['Ref. Designator', 'Part Number', 'Package', 'Rotation', 'X', 'Y', 'Side', 'position'],
+                            names = ['Ref. Designator', 'Part Number', 'Package', 'Rotation', 'X', 'Y', 'Side', 'BoardNumber'],
                             usecols= [0, 2, 5, 6, 7, 8, 9, 12],
-                            converters={'Part Number': lambda x: x.split(',')[0].split('-')[1]},
-                            dtype = {'position':str}
+                            converters={'Part Number': lambda x: x.split(',')[0].split('-', 1)[1]},
+                            dtype = {'BoardNumber':str}
                             )
             return(df)
         
@@ -401,7 +397,7 @@ class App(customtkinter.CTk):
         for i, k in enumerate(boards[1:-2]):
             df = board_converter(k)
             df.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
-            d.update({df.position.iloc[0] : df.drop('position', axis=1)})
+            d.update({df.BoardNumber.iloc[0] : df})
             
         # #Read glob fiducials
         gfids = pd.read_csv(StringIO(boards[-2]),
@@ -412,12 +408,12 @@ class App(customtkinter.CTk):
                             )
         gfids['Part Number'] = 'GlobFig'
         gfids['Package'] = 'GFID'
+        gfids['BoardNumber'] = 'Panel'
         gfids['Rotation'] = 0
         gfids.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         d.update({'glob_fids':gfids})
         # Concat all dataframe to multi index
-        self.dataset_converted = pd.concat(d.values(), axis=1, keys=d.keys())
-        self.update_flat_df()
+        self.dataset_converted = pd.concat(d.values(), keys=d.keys(), axis=0)
 
     def save(self):
         if not self.input_file_name:return
@@ -469,45 +465,43 @@ class App(customtkinter.CTk):
         self.side_select.grid(
             row=0, 
             column=0, 
-            # sticky="w",
-            padx=10, 
-            pady=10,
+            sticky="w",
+            padx=15, 
+            pady=15,
         )
-        self.package_switch = customtkinter.CTkSwitch(
-            master=self.plot_buttons_frame, 
-            text="Package Names", 
-            command=self.plot_xyp,
-            onvalue=True, 
-            offvalue=False
-            )
-        self.package_switch.grid(
-            row=0, 
-            column=1, 
-            # sticky="w",
-            padx=10, 
-            pady=10,
-        )
-        self.designator_switch = customtkinter.CTkSwitch(
-            master=self.plot_buttons_frame, 
-            text="Designator", 
-            command=self.plot_xyp,
-            onvalue=True, 
-            offvalue=False
-            )
-        self.designator_switch.grid(
-            row=0, 
-            column=3, 
-            # sticky="w",
-            padx=10, 
-            pady=10,
-        )
-        
-        import mplcursors
-        
+        # self.package_switch = customtkinter.CTkSwitch(
+        #     master=self.plot_buttons_frame, 
+        #     text="Package Names", 
+        #     command=self.plot_xyp,
+        #     onvalue=True, 
+        #     offvalue=False
+        #     )
+        # self.package_switch.grid(
+        #     row=0, 
+        #     column=1, 
+        #     # sticky="w",
+        #     padx=10, 
+        #     pady=10,
+        # )
+        # self.designator_switch = customtkinter.CTkSwitch(
+        #     master=self.plot_buttons_frame, 
+        #     text="Designator", 
+        #     command=self.plot_xyp,
+        #     onvalue=True, 
+        #     offvalue=False
+        #     )
+        # self.designator_switch.grid(
+        #     row=0, 
+        #     column=3, 
+        #     # sticky="w",
+        #     padx=10, 
+        #     pady=10,
+        # )
+                
         self.fig, self.ax = plt.subplots(
             # figsize = (10/2.54,5.8/2.54)
             )
-        mplcursors.cursor(hover=True)
+
         self.canvas = FigureCanvasTkAgg(self.fig,master= self.plot_frame)
         self.canvas.draw()
         self.canvas.get_tk_widget().grid(
@@ -521,6 +515,7 @@ class App(customtkinter.CTk):
         toolbarFrame = customtkinter.CTkFrame(self.plot_frame, bg_color='red')
         toolbarFrame.grid(row=3,column=0)
         self.toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)
+        self.boads_plots, = self.ax.plot([],[])
         
     def plot_xyp(self, selection=None):
         if not hasattr(self, 'dataset_converted') : return #Check of you have no data
@@ -535,52 +530,72 @@ class App(customtkinter.CTk):
         self.ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
         self.ax.set_aspect('equal') #Keeps ratio of the axis
         
-        # choice = self.side_select.get()
+        df = self.dataset_converted
+        
+        side_selection = self.side_select.get()
         # partnumber_selection = self.package_switch.get()
         # designator_selection = self.designator_switch.get()
-        # df = self.dataset_converted
-        # if choice != "BOTH": 
-        #     df = df.query('Side == @choice')
-        # grouped = df.groupby('Part Number')
-        for index, df in self.dataset_converted.groupby(level=0, axis=1):
-            grouped = df[index].groupby('Part Number')
-            for partnumber, data in grouped:
-                self.ax.plot(
-                    data.X, 
-                    data.Y, 
-                    label = partnumber, 
-                    marker='s', 
-                    markersize=3, 
-                    alpha=0.5, 
-                    linestyle='',
-                    )
-        #     if partnumber_selection:
-        #         for i, x in enumerate(data.X):
-        #             self.ax.annotate(
-        #                 partnumber, 
-        #                 (x, data.Y.iloc[i]), 
-        #                 # fontsize=6, 
-        #                 alpha=0.3, 
-        #                 ha='center', 
-        #                 va="bottom",
-        #                 )
-        #     if designator_selection:
-        #         for i, x in enumerate(data.X):
-        #             self.ax.annotate(
-        #                 data['Ref. Designator'].iloc[i], 
-        #                 (x, data.Y.iloc[i]), 
-        #                 # fontsize=6, 
-        #                 alpha=0.3, 
-        #                 ha='center', 
-        #                 va="top",
-        #                 )
-            
-        # # self.ax.scatter(x,y)
-        # # self.ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
-        # #   ncol=8, fancybox=True, prop={'size': 5})
+        if side_selection != "BOTH": 
+            df = df.query('Side.str.contains(@side_selection)', engine='python')
+        grouped = df.groupby('BoardNumber')
+        
+        for BoardNumber, data in grouped:
+            self.ax.plot(
+                data.X, 
+                data.Y, 
+                label = BoardNumber, 
+                marker='s', 
+                markersize=3, 
+                alpha=0.5, 
+                linestyle='',
+                )
+            # if partnumber_selection:
+            #     for i, x in enumerate(data.X):
+            #         self.ax.annotate(
+            #             partnumber,
+            #             (x, data.Y.iloc[i]),
+            #             # fontsize=6,
+            #             alpha=0.3,
+            #             ha='center',
+            #             va="bottom",
+            #             )
+            # if designator_selection:
+            #     for i, x in enumerate(data.X):
+            #         self.ax.annotate(
+            #             data['Ref. Designator'].iloc[i], 
+            #             (x, data.Y.iloc[i]), 
+            #             # fontsize=6, 
+            #             alpha=0.3, 
+            #             ha='center', 
+            #             va="top",
+            #             )
+        # self.ax.lines[0].remove()
+        # print(list(self.ax.get_lines()).remove(0))
+        # self.ax.scatter(x,y)
+        # self.ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),
+        #   ncol=8, fancybox=True, prop={'size': 5})
         # self.canvas.get_tk_widget()
         # self.fig.canvas.draw_idle()
         # self.update()
+        
+    def plot_package():
+        choice = self.side_select.get()
+        partnumber_selection = self.package_switch.get()
+        designator_selection = self.designator_switch.get()
+        df = self.dataset_converted
+        if choice != "BOTH": 
+            df = df.query('Side == @choice')
+        grouped = df.groupby('Part Number')
+        if partnumber_selection:
+                for i, x in enumerate(data.X):
+                    self.ax.annotate(
+                        partnumber, 
+                        (x, data.Y.iloc[i]), 
+                        # fontsize=6, 
+                        alpha=0.3, 
+                        ha='center', 
+                        va="bottom",
+                        )
         
          
 if __name__ == "__main__":
