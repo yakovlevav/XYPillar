@@ -152,7 +152,8 @@ class App(customtkinter.CTk):
             self.dataset_converted = df
         self.clear_out_box()
         self.plot_xyp()
-        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
+        self.update_flat_df()
+        self.insert_out_box(self.df_flat.to_csv(index=False, sep=self.output_sep))
         self.update()
         
     def main_bar(self):
@@ -374,11 +375,15 @@ class App(customtkinter.CTk):
         self.update_table()
         self.plot_xyp()
         self.set_status("Data ready for review")
-        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
+        self.insert_out_box(self.df_flat.to_csv(index=False, sep=self.output_sep))
     
+    def update_flat_df(self):
+        self.df_flat = pd.DataFrame()
+        for index, df in self.dataset_converted.groupby(level=0, axis=1):
+            self.df_flat = pd.concat([self.df_flat, df[index]]).dropna()
+            
     def convert(self):
-        boards = self.dataset.split('\n\n')#[1:-2]
-        # print(parts[-2])
+        boards = self.dataset.split('\n\n')
         def board_converter(board_data):
             df = pd.read_csv(StringIO(board_data), 
                             sep='|',
@@ -390,6 +395,7 @@ class App(customtkinter.CTk):
                             dtype = {'position':str}
                             )
             return(df)
+        
         #Get All boads in dictionary with number name
         d = dict()
         for i, k in enumerate(boards[1:-2]):
@@ -410,8 +416,8 @@ class App(customtkinter.CTk):
         gfids.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         d.update({'glob_fids':gfids})
         # Concat all dataframe to multi index
-        df = pd.concat(d.values(), axis=1, keys=d.keys())
-        self.dataset_converted = df
+        self.dataset_converted = pd.concat(d.values(), axis=1, keys=d.keys())
+        self.update_flat_df()
 
     def save(self):
         if not self.input_file_name:return
