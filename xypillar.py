@@ -145,6 +145,37 @@ class App(customtkinter.CTk):
                                               text="Export")
         self.export_button.grid(row=4, column=0, padx=20, pady=10, sticky="n")
     
+    def board_filder_selector(self):
+        if not hasattr(self, 'dataset_converted') : return #Check of you have no data
+        self.selector_boards = customtkinter.CTkFrame(
+            master=self.sidebar_frame, 
+            corner_radius=10,
+            )
+        self.selector_boards.grid(
+            row=5, 
+            column=0, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+            )
+
+        for i, k in enumerate(self.dataset_converted.BoardNumber.unique()):
+            checkbox = customtkinter.CTkCheckBox(
+                master=self.selector_boards, 
+                text=k,
+                # variable=True,
+                onvalue=True, 
+                offvalue=False
+                )
+            checkbox.grid(
+                row=i, 
+                column=0, 
+                padx=10, 
+                pady=10, 
+                sticky="news"
+                )
+        self.update()
+    
     def apply_table(self):
         df = self.table.model.df
         if df.empty: 
@@ -377,6 +408,7 @@ class App(customtkinter.CTk):
         self.plot_xyp()
         self.set_status("Data ready for review")
         self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
+        self.board_filder_selector()
                     
     def convert(self):
         boards = self.dataset.split('\n\n')
@@ -396,7 +428,7 @@ class App(customtkinter.CTk):
         d = dict()
         for i, k in enumerate(boards[1:-2]):
             df = board_converter(k)
-            df.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
+            df = df.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
             d.update({df.BoardNumber.iloc[0] : df})
             
         # #Read glob fiducials
