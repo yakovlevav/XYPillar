@@ -62,12 +62,13 @@ class App(customtkinter.CTk):
         
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=30)
+        self.columnconfigure(1, weight=5)
         self.columnconfigure(2, weight=5)
         self.columnconfigure(3, weight=1)
         self.rowconfigure(0, weight= 1)
 
     def sidebar(self):
+        row, col = 0,0
         self.sidebar_frame = customtkinter.CTkFrame(self, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, sticky="news")
         self.sidebar_frame.columnconfigure(0, weight = 1)
@@ -76,12 +77,12 @@ class App(customtkinter.CTk):
             font=customtkinter.CTkFont(size=20, weight="bold")
             )
         self.logo_label.grid(
-            row=0, 
+            row=row, 
             column=0, 
             padx=20, 
             pady=(20, 10),
             )
-        
+        row+=1
         self.my_image = customtkinter.CTkImage(
             light_image=Image.open("XYpillar.png"),
             dark_image=Image.open( os.path.join(os.path.dirname(__file__), "XYpillar.png" )),
@@ -92,29 +93,56 @@ class App(customtkinter.CTk):
             text='', 
             image=self.my_image)
         self.logo.grid(
-            row=1, 
+            row=row, 
             column=0, 
             padx=20, 
             pady=(20, 10))
+        row+=1
 
-
+        
         self.open_button = customtkinter.CTkButton(master=self.sidebar_frame, 
                                               command=self.open_callback, 
                                               text="Open XYP File")
-        self.open_button.grid(row=2, column=0, padx=20, pady=10)
-        
+        self.open_button.grid(row=row, column=0, padx=20, pady=10)
+        row+=1
+        self.file_name_box = customtkinter.CTkEntry(
+            master=self.sidebar_frame, 
+            state='disabled',
+            width=200
+            )
+        self.file_name_box.grid(
+            row=row,
+            column=col, 
+            padx=10, 
+            pady=10,
+            sticky="news"
+            )
+        row+=1
+        self.selector_boards = customtkinter.CTkFrame(
+            master=self.sidebar_frame, 
+            corner_radius=10,
+            )
+        self.selector_boards.grid(
+            row=row, 
+            column=0, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+            )
+        row+=1
         #Create frame
         self.table_buttons_frame = customtkinter.CTkFrame(
             master=self.sidebar_frame, 
             corner_radius=10,
             )
         self.table_buttons_frame.grid(
-            row=4, 
+            row=row, 
             column=0, 
             sticky="news",
             padx=10, 
             pady=10,
         )
+        row+=1
         self.table_buttons_frame.columnconfigure(0, weight = 1)
         self.table_buttons_frame.rowconfigure(0, weight = 1)
         self.table_buttons_frame.rowconfigure(1, weight = 1)
@@ -155,26 +183,15 @@ class App(customtkinter.CTk):
         self.export_button = customtkinter.CTkButton(master=self.sidebar_frame, 
                                               command=self.save, 
                                               text="Export")
-        self.export_button.grid(row=5, column=0, padx=20, pady=10, sticky="n")
+        self.export_button.grid(row=row, column=0, padx=20, pady=10, sticky="n")
+        row+=1
     
     def reset_table(self):
         self.dataset_converted = self.dataset_converted_clean
         self.update_table()
         
     def board_filter_selector(self):
-        if not hasattr(self, 'dataset_converted') : return #Check of you have no data
-        self.selector_boards = customtkinter.CTkFrame(
-            master=self.sidebar_frame, 
-            corner_radius=10,
-            )
-        self.selector_boards.grid(
-            row=3, 
-            column=0, 
-            padx=10, 
-            pady=10, 
-            sticky="news"
-            )
-        
+        if not hasattr(self, 'dataset_converted') : return #Check of you have no data        
         self.board_selectors = []
         for i, k in enumerate(self.dataset_converted.BoardNumber.unique()):
             checkbox = customtkinter.CTkCheckBox(
@@ -219,61 +236,37 @@ class App(customtkinter.CTk):
             self.dataset_converted = df
         self.clear_out_box()
         self.plot_xyp()
-        self.insert_out_box(self.dataset_converted.to_csv(index=False, sep=self.output_sep))
+        df = self.dataset_converted
+        df = df.drop('BoardNumber', axis = 1)
+        df = df.to_csv(index=False, sep=self.output_sep)
+        self.insert_out_box(df)
         self.update()
         
     def main_bar(self):
+        row, col = 0, 0
         self.main_frame = customtkinter.CTkFrame(self, fg_color='transparent', corner_radius=0)
         self.main_frame.grid(row=0, column=2, sticky="news")
         self.main_frame.columnconfigure(0, weight=1)
-        self.main_frame.columnconfigure(1, weight=10)
         self.main_frame.rowconfigure(0, weight= 1)
-        self.main_frame.rowconfigure(1, weight= 1)
-        self.main_frame.rowconfigure(2, weight= 50)
-        self.main_frame.rowconfigure(3, weight= 1)
-        self.main_frame.rowconfigure(4, weight= 50)
-        self.main_frame.rowconfigure(5, weight= 1)
-        self.main_frame.rowconfigure(6, weight= 1)
+        self.main_frame.rowconfigure(1, weight= 100)
+        self.main_frame.rowconfigure(2, weight= 1)
+        self.main_frame.rowconfigure(3, weight= 100)
+        self.main_frame.rowconfigure(4, weight= 1)
+        self.main_frame.rowconfigure(5, weight= 100)
         
-        self.label = customtkinter.CTkLabel(
-            master=self.main_frame, 
-            text="Input file:", 
-            anchor='e'
-            )
-        self.label.grid(
-            row=0, 
-            column=0, 
-            padx=10, 
-            pady=10,
-            sticky="ew"
-            )
-
-        self.file_name_box = customtkinter.CTkEntry(
-            master=self.main_frame, 
-            state='disabled',
-            width=200
-            )
-        self.file_name_box.grid(
-            row=0,
-            column=1, 
-            padx=10, 
-            pady=10,
-            sticky="w"
-            )
-
         self.input = customtkinter.CTkLabel(
             master=self.main_frame, 
             text="Input data", 
             anchor='w'
             )
         self.input.grid(
-            row=1, 
-            column=0, 
+            row=row, 
+            column=col, 
             padx=20, 
             pady=0,
             sticky="news"
             )
-
+        row+=1
         self.input_box = customtkinter.CTkTextbox(
             master=self.main_frame, 
             corner_radius=15,
@@ -281,62 +274,61 @@ class App(customtkinter.CTk):
             state='disabled',
             )
         self.input_box.grid(
-            row=2, 
+            row=row, 
             column=0, 
-            columnspan=2, 
             padx=10, 
             pady=10,
             sticky="news"
             )
-
+        row+=1
         self.output = customtkinter.CTkLabel(
             master=self.main_frame, 
             text="Converted data", 
             anchor='w')
         self.output.grid(
-            row=3, 
+            row=row, 
             column=0, 
             padx=20, 
             pady=0,
             sticky="news"
             )
-        
+        row+=1
         self.out_box = customtkinter.CTkTextbox(
             master=self.main_frame, 
             corner_radius=15, wrap='none', 
             state='disabled',)
         self.out_box.grid(
-            row=4, 
+            row=row, 
             column=0, 
-            columnspan=2, 
             padx=10, 
             pady=10,
             sticky="news"
             )
-
+        row+=1
         self.status = customtkinter.CTkLabel(
             master=self.main_frame, 
             text="Status log", 
             anchor='w')
         self.status.grid(
-            row=5, 
+            row=row, 
             column=0, 
             padx=20, 
             pady=0,
             sticky="news"
             )
+        row+=1
         self.statusbox = customtkinter.CTkTextbox(
             master=self.main_frame, 
             state='disabled', 
             )
         self.statusbox.grid(
-            row=6, 
+            row=row, 
             column=0, 
-            columnspan=2, 
             padx=10, 
             pady=10,
             sticky="news"
             )
+        row+=1
         
     def DataTable(self):
         self.datatable_frame = customtkinter.CTkFrame(self)
