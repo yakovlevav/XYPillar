@@ -22,7 +22,7 @@ plt.switch_backend("Agg") # Destroy app after closing
 # try:
 #     # version_str = version_query.predict_version_str()
 # except Exception as e:
-version_str = '0.2.2'
+version_str = '0.2.3'
 try:
     import pyi_splash
     pyi_splash.update_text('XYPillar loadind...')
@@ -265,7 +265,7 @@ class App(customtkinter.CTk):
                                         text="Apply filters to table")
         self.apply_filters.grid(row=row+1, column=0, padx=10, pady=10, sticky="news")
         
-    def add_to_filter_box(self, value):
+    def add_to_filter_box(self, value = None):
         self.filter_text_box.configure(state='normal')
         col = self.filter_col_selection.get()
         how = self.filter_how_selection.get()
@@ -287,21 +287,24 @@ class App(customtkinter.CTk):
         self.dataset_converted = self.dataset_converted.query(text)
         self.clear_filter_field()
         self.update_table()
+        self.update_col_filter()
+        self.update_row_filter()
         
     def reset_table(self):
         self.dataset_converted = self.dataset_converted_clean
         self.update_table()
     
-    def update_col_filter(self, value):
+    def update_col_filter(self, value = None):
         all_columns = list(self.dataset_converted.columns)
         self.filter_col_selection.configure(values = all_columns)
         self.filter_col_selection.set(all_columns[0])
         
-    def update_row_filter(self, col_value):
+    def update_row_filter(self, value = None):
         if not hasattr(self, 'dataset_converted') : return #Check of you have no data
+        col_value = self.filter_col_selection.get()
         list_unique = self.dataset_converted[col_value].unique()
         board_selectors = []
-        self.filter_row_selection.configure(values = list_unique)
+        self.filter_row_selection.configure(values = sorted(list_unique))
         self.filter_row_selection.set(self.default_row_filter_values[0])            
         
     def apply_table(self):
@@ -589,25 +592,25 @@ class App(customtkinter.CTk):
             master=self.plot_frame, 
             corner_radius=20
             )
-        self.plot_buttons_frame.grid(
-            row=0, 
-            column=0, 
-            sticky="news",
-            padx=10, 
-            pady=10,
-            )
-        self.plot_buttons_frame.columnconfigure(0, weight=1)
-        self.plot_buttons_frame.columnconfigure(1, weight=1)
-        self.side_select = customtkinter.CTkOptionMenu(master=self.plot_buttons_frame,
-                                       values=["BOTH", "TOP", "BOTTOM"],
-                                       command=self.plot_xyp)
-        self.side_select.grid(
-            row=0, 
-            column=0, 
-            sticky="w",
-            padx=15, 
-            pady=15,
-        )
+        # self.plot_buttons_frame.grid(
+        #     row=0, 
+        #     column=0, 
+        #     sticky="news",
+        #     padx=10, 
+        #     pady=10,
+        #     )
+        # self.plot_buttons_frame.columnconfigure(0, weight=1)
+        # self.plot_buttons_frame.columnconfigure(1, weight=1)
+        # self.side_select = customtkinter.CTkOptionMenu(master=self.plot_buttons_frame,
+        #                                values=["BOTH", "TOP", "BOTTOM"],
+        #                                command=self.plot_xyp)
+        # self.side_select.grid(
+        #     row=0, 
+        #     column=0, 
+        #     sticky="w",
+        #     padx=15, 
+        #     pady=15,
+        # )
         # self.package_switch = customtkinter.CTkSwitch(
         #     master=self.plot_buttons_frame, 
         #     text="Package Names", 
@@ -671,11 +674,11 @@ class App(customtkinter.CTk):
         
         df = self.dataset_converted
         
-        side_selection = self.side_select.get()
+        # side_selection = self.side_select.get()
         # partnumber_selection = self.package_switch.get()
         # designator_selection = self.designator_switch.get()
-        if side_selection != "BOTH": 
-            df = df.query('Side.str.contains(@side_selection)', engine='python')
+        # if side_selection != "BOTH": 
+        #     df = df.query('Side.str.contains(@side_selection)', engine='python')
         grouped = df.groupby('BoardNumber')
         
         for BoardNumber, data in grouped:
@@ -718,12 +721,12 @@ class App(customtkinter.CTk):
         # self.update()
         
     def plot_package():
-        choice = self.side_select.get()
+        # choice = self.side_select.get()
         partnumber_selection = self.package_switch.get()
         designator_selection = self.designator_switch.get()
         df = self.dataset_converted
-        if choice != "BOTH": 
-            df = df.query('Side == @choice')
+        # if choice != "BOTH": 
+        #     df = df.query('Side == @choice')
         grouped = df.groupby("PartNum")
         if partnumber_selection:
                 for i, x in enumerate(data.X):
