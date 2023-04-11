@@ -150,13 +150,12 @@ class App(customtkinter.CTk):
         self.status = customtkinter.CTkLabel(
             master=self.table_buttons_frame, 
             text="Table control", 
-            anchor='w'
             )
         self.status.grid(
             row=0, 
             column=0, 
-            padx=20, 
-            pady=0,
+            padx=10, 
+            pady=10,
             sticky="news"
             )
         self.apply_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
@@ -303,7 +302,7 @@ class App(customtkinter.CTk):
         list_unique = self.dataset_converted[col_value].unique()
         board_selectors = []
         self.filter_row_selection.configure(values = list_unique)
-        self.filter_row_selection.set(list_unique[0])            
+        self.filter_row_selection.set(self.default_row_filter_values[0])            
         
     def apply_table(self):
         df = self.table.model.df
