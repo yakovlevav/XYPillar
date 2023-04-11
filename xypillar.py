@@ -559,7 +559,7 @@ class App(customtkinter.CTk):
 
     def save(self):
         if not self.input_file_name:return
-        path_name = customtkinter.filedialog.asksaveasfilename(filetypes=[("Text files","*.txt")], initialfile = self.input_file_name+'_converted.txt')
+        path_name = customtkinter.filedialog.asksaveasfilename(filetypes=[("Text files","*.txt")], initialfile = self.input_file_name+'.txt')
         self.output_file_path = os.path.normpath(path_name)
 
         if not self.output_file_path:
