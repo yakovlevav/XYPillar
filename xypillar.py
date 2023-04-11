@@ -446,9 +446,9 @@ class App(customtkinter.CTk):
                             sep='|',
                             comment = "#",
                             # skiprows=1,
-                            names = ['Ref. Designator', 'Part Number', 'Package', 'Rotation', 'X', 'Y', 'Side', 'BoardNumber'],
+                            names = ['Ref', "PartNum", 'Package', "Angle", "X(mm)", "Y(mm)", 'Side', 'BoardNumber'],
                             usecols= [0, 2, 5, 6, 7, 8, 9, 12],
-                            converters={'Part Number': lambda x: x.split(',')[0].split('-', 1)[1]},
+                            converters={"PartNum": lambda x: x.split(',')[0].split('-', 1)[1]},
                             dtype = {'BoardNumber':str}
                             )
             return(df)
@@ -464,13 +464,13 @@ class App(customtkinter.CTk):
         gfids = pd.read_csv(StringIO(boards[-2]),
                             sep='|', 
                             comment = "#",
-                            names=["Side", "Ref. Designator", "X", "Y"],
+                            names=["Side", "Ref", "X(mm)", "Y(mm)"],
                             usecols=range(4),
                             )
-        gfids['Part Number'] = 'GlobFig'
+        gfids["PartNum"] = 'GlobFig'
         gfids['Package'] = 'GFID'
         gfids['BoardNumber'] = 'Panel'
-        gfids['Rotation'] = 0
+        gfids["Angle"] = 0
         gfids = gfids.apply(lambda x: x.str.strip() if x.dtype == 'object' else x)
         d.update({'glob_fids':gfids})
         # Concat all dataframe to multi index
@@ -602,8 +602,8 @@ class App(customtkinter.CTk):
         
         for BoardNumber, data in grouped:
             self.ax.plot(
-                data.X, 
-                data.Y, 
+                data["X(mm)"], 
+                data["Y(mm)"], 
                 label = BoardNumber, 
                 marker='s', 
                 markersize=3, 
@@ -623,7 +623,7 @@ class App(customtkinter.CTk):
             # if designator_selection:
             #     for i, x in enumerate(data.X):
             #         self.ax.annotate(
-            #             data['Ref. Designator'].iloc[i], 
+            #             data['Ref'].iloc[i], 
             #             (x, data.Y.iloc[i]), 
             #             # fontsize=6, 
             #             alpha=0.3, 
@@ -646,7 +646,7 @@ class App(customtkinter.CTk):
         df = self.dataset_converted
         if choice != "BOTH": 
             df = df.query('Side == @choice')
-        grouped = df.groupby('Part Number')
+        grouped = df.groupby("PartNum")
         if partnumber_selection:
                 for i, x in enumerate(data.X):
                     self.ax.annotate(
