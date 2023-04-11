@@ -22,7 +22,7 @@ plt.switch_backend("Agg") # Destroy app after closing
 # try:
 #     # version_str = version_query.predict_version_str()
 # except Exception as e:
-version_str = '0.2.1'
+version_str = '0.2.2'
 try:
     import pyi_splash
     pyi_splash.update_text('XYPillar loadind...')
@@ -128,6 +128,8 @@ class App(customtkinter.CTk):
             pady=10, 
             sticky="news"
             )
+        self.selector_boards.columnconfigure(0, weight = 1)
+        self.filter_menu()
         row+=1
         #Create frame
         self.table_buttons_frame = customtkinter.CTkFrame(
@@ -185,47 +187,124 @@ class App(customtkinter.CTk):
         self.export_button.grid(row=row, column=0, padx=20, pady=10, sticky="n")
         row+=1
     
+    def filter_menu(self):
+        row, col = 0, 0
+        self.filter_header_label = customtkinter.CTkLabel(
+            master = self.selector_boards,
+            text="Apply filters", 
+            )
+        self.filter_header_label.grid(
+            row = row,
+            column = col,
+            padx=10, 
+            pady=10, 
+            sticky="news"
+        )
+        row += 1
+        self.default_col_filter_values = ['None']
+        self.filter_col_selection = customtkinter.CTkOptionMenu(
+            master=self.selector_boards,
+            values=self.default_col_filter_values,
+            command=self.update_row_filter,
+            )
+        self.filter_col_selection.grid(
+            row=row, 
+            column=col, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+        )
+        row += 1
+        self.default_how_filter_values = ['==', '!=']
+        self.filter_how_selection = customtkinter.CTkOptionMenu(
+            master=self.selector_boards,
+            values=self.default_how_filter_values,
+            # command=self.add_to_filter_box,
+            )
+        self.filter_how_selection.grid(
+            row=row, 
+            column=col, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+        )
+        row += 1
+        self.default_row_filter_values = ['None']
+        self.filter_row_selection = customtkinter.CTkOptionMenu(
+            master=self.selector_boards,
+            values=self.default_row_filter_values,
+            command=self.add_to_filter_box,
+            )
+        self.filter_row_selection.grid(
+            row=row, 
+            column=col, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+        )
+        row += 1
+        self.filter_text_box = customtkinter.CTkTextbox(
+            master=self.selector_boards, 
+            corner_radius=0,
+            
+            )
+        self.filter_text_box.grid(
+            row = row,
+            column = col,
+            padx = 10,
+            pady = 10,
+            sticky = 'news'
+        )
+        row += 1
+        self.clear_filters = customtkinter.CTkButton(master=self.selector_boards, 
+                                        command=self.clear_filter_field, 
+                                        text="Clear filters")
+        self.clear_filters.grid(row=row+1, column=0, padx=10, pady=10, sticky="news")
+        row += 1
+        self.apply_filters = customtkinter.CTkButton(master=self.selector_boards, 
+                                        command=self.apply_filters_to_table, 
+                                        text="Apply filters to table")
+        self.apply_filters.grid(row=row+1, column=0, padx=10, pady=10, sticky="news")
+        
+        
+    def add_to_filter_box(self, value):
+        # self.filter_text_box.configure(state='normal')
+        col = self.filter_col_selection.get()
+        how = self.filter_how_selection.get()
+        insert = "{} {} '{}'\n".format(col, how, value)
+        self.filter_text_box.insert(customtkinter.END, insert)
+        # self.filter_text_box.configure(state='disabled')
+        return
+    
+    def clear_filter_field(self):
+        # self.filter_text_box.configure(state='normal')
+        self.filter_text_box.delete("0.0", customtkinter.END)
+        # self.filter_text_box.configure(state='disabled')
+        return
+    
+    def apply_filters_to_table(self):
+        text = self.filter_text_box.get("0.0", customtkinter.END)
+        text = text.replace('\n\n', '')
+        text = text.replace('\n', ' or ')
+        self.dataset_converted = self.dataset_converted.query(text)
+        self.update_table()
+        
+        
     def reset_table(self):
         self.dataset_converted = self.dataset_converted_clean
         self.update_table()
-        
-    def board_filter_selector(self):
-        if not hasattr(self, 'dataset_converted') : return #Check of you have no data        
-        self.board_selectors = []
-        for i, k in enumerate(self.dataset_converted.BoardNumber.unique()):
-            checkbox = customtkinter.CTkCheckBox(
-                master=self.selector_boards, 
-                text=k,
-                onvalue=True, 
-                offvalue=False,
-                # command=self.filter_selected_boards
-                )
-            checkbox.grid(
-                row=i, 
-                column=0, 
-                padx=10, 
-                pady=10, 
-                sticky="news"
-                )
-            # checkbox.toggle()
-            self.board_selectors.append((k,checkbox))
-        self.filter_boards = customtkinter.CTkButton(master=self.selector_boards, 
-                                              command=self.filter_selected_boards, 
-                                              text="Select Boards")
-        self.filter_boards.grid(row=i+1, column=0, padx=20, pady=10, sticky="n")
     
-    def filter_selected_boards(self):
-        if not hasattr(self, 'dataset_converted') : return #Check of you have no data
-        df = self.dataset_converted
-        if df.empty and not self.board_selectors:
-            return
-        filter = []
-        for board_position, value in self.board_selectors:
-            if value.get(): filter.append(board_position) 
+    def update_col_filter(self, value):
+        all_columns = list(self.dataset_converted.columns)
+        self.filter_col_selection.configure(values = all_columns)
+        self.filter_col_selection.set(all_columns[0])
         
-        df = df[df['BoardNumber'].isin(filter)]
-        self.table.updateModel(TableModel(df))
-        self.table.redraw()
+    def update_row_filter(self, col_value):
+        if not hasattr(self, 'dataset_converted') : return #Check of you have no data
+        list_unique = self.dataset_converted[col_value].unique()
+        board_selectors = []
+        self.filter_row_selection.configure(values = list_unique)
+        self.filter_row_selection.set(list_unique[0])            
         
     def apply_table(self):
         df = self.table.model.df
@@ -407,6 +486,7 @@ class App(customtkinter.CTk):
         self.dataset_converted = pd.DataFrame()
         #Clearing plot
         self.clear_plot()
+        self.clear_filter_field()
         self.set_status("All cleared!")
         
     def open_callback(self):
@@ -437,7 +517,7 @@ class App(customtkinter.CTk):
         df = df.drop('BoardNumber', axis = 1)
         df = df.to_csv(index=False, sep=self.output_sep)
         self.insert_out_box(df)
-        self.board_filter_selector()
+        self.update_col_filter(None)
                     
     def convert(self):
         boards = self.dataset.split('\n\n')
