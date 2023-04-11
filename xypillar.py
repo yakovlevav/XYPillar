@@ -245,8 +245,8 @@ class App(customtkinter.CTk):
         row += 1
         self.filter_text_box = customtkinter.CTkTextbox(
             master=self.selector_boards, 
-            corner_radius=0,
-            
+            corner_radius=20,
+            state='disabled'
             )
         self.filter_text_box.grid(
             row = row,
@@ -266,20 +266,19 @@ class App(customtkinter.CTk):
                                         text="Apply filters to table")
         self.apply_filters.grid(row=row+1, column=0, padx=10, pady=10, sticky="news")
         
-        
     def add_to_filter_box(self, value):
-        # self.filter_text_box.configure(state='normal')
+        self.filter_text_box.configure(state='normal')
         col = self.filter_col_selection.get()
         how = self.filter_how_selection.get()
         insert = "{} {} '{}'\n".format(col, how, value)
         self.filter_text_box.insert(customtkinter.END, insert)
-        # self.filter_text_box.configure(state='disabled')
+        self.filter_text_box.configure(state='disabled')
         return
     
     def clear_filter_field(self):
-        # self.filter_text_box.configure(state='normal')
+        self.filter_text_box.configure(state='normal')
         self.filter_text_box.delete("0.0", customtkinter.END)
-        # self.filter_text_box.configure(state='disabled')
+        self.filter_text_box.configure(state='disabled')
         return
     
     def apply_filters_to_table(self):
@@ -287,8 +286,8 @@ class App(customtkinter.CTk):
         text = text.replace('\n\n', '')
         text = text.replace('\n', ' or ')
         self.dataset_converted = self.dataset_converted.query(text)
+        self.clear_filter_field()
         self.update_table()
-        
         
     def reset_table(self):
         self.dataset_converted = self.dataset_converted_clean
