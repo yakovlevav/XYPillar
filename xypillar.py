@@ -59,13 +59,15 @@ class App(customtkinter.CTk):
         self.DataTable()
         self.draw_plot_mainframe()
     
+    ### CREATE MAIN GRID ###
     def create_main_grid(self):
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=5)
         self.columnconfigure(2, weight=2)
         self.columnconfigure(3, weight=1)
         self.rowconfigure(0, weight= 1)
-
+    
+    ### CREATE SIDE BAR ###
     def sidebar(self):
         row, col = 0,0
         self.sidebar_frame = customtkinter.CTkFrame(self, corner_radius=0)
@@ -131,7 +133,7 @@ class App(customtkinter.CTk):
         self.selector_boards.columnconfigure(0, weight = 1)
         self.filter_menu()
         row+=1
-        #Create frame
+        #Create frame for table control
         self.table_buttons_frame = customtkinter.CTkFrame(
             master=self.sidebar_frame, 
             corner_radius=10,
@@ -144,48 +146,15 @@ class App(customtkinter.CTk):
             pady=10,
         )
         row+=1
-        self.table_buttons_frame.columnconfigure(0, weight = 1)
-        self.table_buttons_frame.rowconfigure(0, weight = 1)
-        self.table_buttons_frame.rowconfigure(1, weight = 1)
-        self.status = customtkinter.CTkLabel(
-            master=self.table_buttons_frame, 
-            text="Table control", 
-            )
-        self.status.grid(
-            row=0, 
-            column=0, 
-            padx=10, 
-            pady=10,
-            sticky="news"
-            )
-        self.apply_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
-                                              command=self.apply_table, 
-                                              text="Apply table")
-        self.apply_table_button.grid(
-            row=1, 
-            column=0, 
-            padx=10, 
-            pady=10, 
-            sticky="news"
-            )
-        self.table_buttons_frame.columnconfigure(0, weight = 1)
-        self.reset_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
-                                              command= self.reset_table, 
-                                              text="Reset table")
-        self.reset_table_button.grid(
-            row=2, 
-            column=0, 
-            padx=10, 
-            pady=10, 
-            sticky="news"
-            )
-        
+        self.table_control_pannel()
+    
         self.export_button = customtkinter.CTkButton(master=self.sidebar_frame, 
                                               command=self.save, 
                                               text="Export")
         self.export_button.grid(row=row, column=0, padx=20, pady=10, sticky="n")
         row+=1
-    
+        
+    ### Fifter box in sidebar ###
     def filter_menu(self):
         row, col = 0, 0
         self.filter_header_label = customtkinter.CTkLabel(
@@ -264,7 +233,9 @@ class App(customtkinter.CTk):
                                         command=self.apply_filters_to_table, 
                                         text="Apply filters to table")
         self.apply_filters.grid(row=row+1, column=0, padx=10, pady=10, sticky="news")
-        
+    
+    
+    ### Fifter WORK FUNCTIONS ###
     def add_to_filter_box(self, value = None):
         self.filter_text_box.configure(state='normal')
         col = self.filter_col_selection.get()
@@ -289,7 +260,8 @@ class App(customtkinter.CTk):
         self.update_table()
         self.update_col_filter()
         self.update_row_filter()
-        
+    
+    
     def reset_table(self):
         self.dataset_converted = self.dataset_converted_clean
         self.update_table()
@@ -306,7 +278,47 @@ class App(customtkinter.CTk):
         board_selectors = []
         self.filter_row_selection.configure(values = sorted(list_unique))
         self.filter_row_selection.set(self.default_row_filter_values[0])            
-        
+    
+    ### Table control ###
+    def table_control_pannel(self):
+        row, col = 0,0
+        self.table_buttons_frame.columnconfigure(0, weight = 1)
+        self.table_buttons_frame.rowconfigure(0, weight = 1)
+        self.table_buttons_frame.rowconfigure(1, weight = 1)
+        self.status = customtkinter.CTkLabel(
+            master=self.table_buttons_frame, 
+            text="Table control", 
+            )
+        self.status.grid(
+            row=0, 
+            column=0, 
+            padx=10, 
+            pady=10,
+            sticky="news"
+            )
+        self.apply_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
+                                              command=self.apply_table, 
+                                              text="Apply table")
+        self.apply_table_button.grid(
+            row=1, 
+            column=0, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+            )
+        self.table_buttons_frame.columnconfigure(0, weight = 1)
+        self.reset_table_button = customtkinter.CTkButton(master=self.table_buttons_frame, 
+                                              command= self.reset_table, 
+                                              text="Reset table")
+        self.reset_table_button.grid(
+            row=2, 
+            column=0, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+            )
+    
+    ### Table control functions
     def apply_table(self):
         df = self.table.model.df
         if df.empty: 
