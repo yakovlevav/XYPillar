@@ -223,11 +223,17 @@ class App(customtkinter.CTk):
             pady = 10,
             sticky = 'news'
         )
+
         row += 1
         self.clear_filters = customtkinter.CTkButton(master=self.selector_boards, 
                                         command=self.clear_filter_field, 
                                         text="Clear filters")
         self.clear_filters.grid(row=row+1, column=0, padx=10, pady=10, sticky="news")
+        row += 1
+        self.default_filters = customtkinter.CTkButton(master=self.selector_boards, 
+                                        command=self.insert_default_filter, 
+                                        text="Default filter")
+        self.default_filters.grid(row=row+1, column=0, padx=10, pady=10, sticky="news")
         row += 1
         self.apply_filters = customtkinter.CTkButton(master=self.selector_boards, 
                                         command=self.apply_filters_to_table, 
@@ -245,6 +251,13 @@ class App(customtkinter.CTk):
         self.filter_text_box.configure(state='disabled')
         return
     
+    def insert_default_filter(self, value = None):
+        self.default_filter = "BoardNumber == '1,1' \n BoardNumber == 'Panel'"
+        self.clear_filter_field()
+        self.filter_text_box.configure(state='normal')
+        self.filter_text_box.insert(customtkinter.END, self.default_filter)
+        self.filter_text_box.configure(state='disabled')
+    
     def clear_filter_field(self):
         self.filter_text_box.configure(state='normal')
         self.filter_text_box.delete("0.0", customtkinter.END)
@@ -253,7 +266,8 @@ class App(customtkinter.CTk):
     
     def apply_filters_to_table(self):
         text = self.filter_text_box.get("0.0", customtkinter.END)
-        text = text.replace('\n\n', '')
+        text = text.strip()
+        # text = text.replace('\n\n', '')
         text = text.replace('\n', ' or ')
         self.dataset_converted = self.dataset_converted.query(text)
         self.clear_filter_field()
