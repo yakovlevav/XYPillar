@@ -197,6 +197,20 @@ class App(customtkinter.CTk):
             sticky="news"
         )
         row += 1
+        self.default_end_filter_values = ['|', '&']
+        self.filter_end_selection = customtkinter.CTkOptionMenu(
+            master=self.selector_boards,
+            values=self.default_end_filter_values,
+            # command=self.add_to_filter_box,
+            )
+        self.filter_end_selection.grid(
+            row=row, 
+            column=col, 
+            padx=10, 
+            pady=10, 
+            sticky="news"
+        )
+        row += 1
         self.default_row_filter_values = ['None']
         self.filter_row_selection = customtkinter.CTkOptionMenu(
             master=self.selector_boards,
@@ -246,13 +260,14 @@ class App(customtkinter.CTk):
         self.filter_text_box.configure(state='normal')
         col = self.filter_col_selection.get()
         how = self.filter_how_selection.get()
-        insert = "{} {} '{}'\n".format(col, how, value)
+        end = self.filter_end_selection.get()
+        insert = u'{} {} "{}" {} \n'.format(col, how, value, end)
         self.filter_text_box.insert(customtkinter.END, insert)
         self.filter_text_box.configure(state='disabled')
         return
     
     def insert_default_filter(self, value = None):
-        self.default_filter = "BoardNumber == '1,1' \n BoardNumber == 'Panel'"
+        self.default_filter = "PartNum.str.contains('MECH') == False &\nPartNum.str.contains('TEST') == False &\nPartNum.str.contains('SOLDER') == False &\nPartNum.str.contains('SEP') == False &\n (BoardNumber == '1,1' |\nBoardNumber == 'Panel')".strip()
         self.clear_filter_field()
         self.filter_text_box.configure(state='normal')
         self.filter_text_box.insert(customtkinter.END, self.default_filter)
@@ -266,10 +281,10 @@ class App(customtkinter.CTk):
     
     def apply_filters_to_table(self):
         text = self.filter_text_box.get("0.0", customtkinter.END)
-        text = text.strip()
-        # text = text.replace('\n\n', '')
-        text = text.replace('\n', ' or ')
-        self.dataset_converted = self.dataset_converted.query(text)
+        text = text.replace('\n', '')
+        text = text.strip("&|\n ")
+        # text = text.replace('\n', ' or ')
+        self.dataset_converted = self.dataset_converted.query(text, engine='python')
         self.clear_filter_field()
         self.update_table()
         self.update_col_filter()
