@@ -37,7 +37,7 @@ class App(customtkinter.CTk):
         
         # self.state('zoomed')
         window_width = 1920
-        window_height = 1080
+        window_height = 1280
         
         self.output_sep = '\t'
 
@@ -51,7 +51,7 @@ class App(customtkinter.CTk):
         self.geometry("{}x{}+{}+{}".format(window_width, window_height, center_x, center_y))
         self.title("XYPillar {}".format(version_str))
         self.iconbitmap(os.path.join(os.path.dirname(__file__), "XYpillar.ico") )
-        self.minsize(1920, 1080)
+        self.minsize(1920, 1280)
         
         self.create_main_grid()
         self.sidebar()
@@ -566,7 +566,7 @@ class App(customtkinter.CTk):
         import re
         def find_part_number(input):
             try:
-                number = re.findall(r'\d{6}|\d{3}-\d{2}-\d{3}-\d{2}|TESTPOINT|SKIP_MARK|SOLDERPOINT|MECH_FIDUCIAL', input)[0]
+                number = re.findall(r'\d{6}|\d{3}-\d{2}-\d{3}-\d{2}|TESTPOINT|SKIP_MARK|SOLDERPOINT|MECH_FIDUCIAL|SERIE_NR|SEPARATIONPOINT', input)[0]
             except:
                 number = 'error'
             return(number)
