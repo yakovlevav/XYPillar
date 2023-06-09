@@ -563,6 +563,14 @@ class App(customtkinter.CTk):
                     
     def convert(self):
         boards = self.dataset.split('\n\n')
+        import re
+        def find_part_number(input):
+            try:
+                number = re.findall(r'\d{6}|\d{3}-\d{2}-\d{3}-\d{2}|TESTPOINT|SKIP_MARK|SOLDERPOINT|MECH_FIDUCIAL', input)[0]
+            except:
+                number = 'error'
+            return(number)
+            
         def board_converter(board_data):
             df = pd.read_csv(StringIO(board_data), 
                             sep='|',
@@ -570,7 +578,7 @@ class App(customtkinter.CTk):
                             # skiprows=1,
                             names = ['Ref', "PartNum", 'Package', "Angle", "X(mm)", "Y(mm)", 'Side', 'BoardNumber'],
                             usecols= [0, 2, 5, 6, 7, 8, 9, 12],
-                            converters={"PartNum": lambda x: x.split(',')[0].split('-', 1)[1]},
+                            converters={ "PartNum": find_part_number},
                             dtype = {'BoardNumber':str}
                             )
             return(df)
